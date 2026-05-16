@@ -188,14 +188,14 @@
       <h2 class="text-sm font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">体重 (KG)</h2>
 
       <div class="flex items-center justify-center w-full mb-5">
-        <button id="btn-minus" class="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light border active:scale-95 transition-transform" style="background-color: rgba(255,255,255,.03); border-color: var(--border-color); color: var(--text-main);">-</button>
+        <button id="btn-minus" class="w-14 h-14 shrink-0 rounded-full flex items-center justify-center text-3xl font-light border active:scale-95 transition-transform" style="background-color: rgba(255,255,255,.03); border-color: var(--border-color); color: var(--text-main);">-</button>
 
-        <div class="relative mx-4 flex-1 text-center">
-          <input type="number" id="weight-input" step="0.1" class="w-full text-center text-6xl font-bold focus:outline-none bg-transparent" value="70.0" inputmode="decimal" />
+        <div class="relative mx-2 flex-1 text-center">
+          <input type="number" id="weight-input" step="0.1" class="w-full text-center text-[3.25rem] font-bold tracking-tight focus:outline-none bg-transparent" value="70.0" inputmode="decimal" />
           <div id="weight-trend-indicator" class="absolute -bottom-6 w-full text-center text-xs font-medium opacity-0 transition-opacity"></div>
         </div>
 
-        <button id="btn-plus" class="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light border active:scale-95 transition-transform" style="background-color: rgba(255,255,255,.03); border-color: var(--border-color); color: var(--text-main);">+</button>
+        <button id="btn-plus" class="w-14 h-14 shrink-0 rounded-full flex items-center justify-center text-3xl font-light border active:scale-95 transition-transform" style="background-color: rgba(255,255,255,.03); border-color: var(--border-color); color: var(--text-main);">+</button>
       </div>
 
       <div class="grid grid-cols-4 gap-2 w-full mb-4">
