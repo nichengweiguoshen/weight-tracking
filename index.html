@@ -174,9 +174,14 @@
         <h1 class="text-2xl font-bold tracking-tight">今日打卡</h1>
         <p id="current-date-display" class="text-sm mt-1" style="color: var(--text-muted);"></p>
       </div>
-      <button id="btn-export" title="导出数据为 JSON" class="p-2 w-11 h-11 rounded-full flex items-center justify-center border transition-colors" style="border-color: var(--border-color); background-color: rgba(122,167,255,.10); color: var(--primary);">
-        <i class="ph ph-export text-xl"></i>
-      </button>
+      <div class="flex gap-2">
+        <button id="btn-unit-toggle" title="切换单位" class="p-2 w-11 h-11 rounded-full flex items-center justify-center border transition-colors font-bold text-sm" style="border-color: var(--border-color); background-color: rgba(52,211,153,.10); color: var(--accent);">
+          KG
+        </button>
+        <button id="btn-export" title="导出数据为 JSON" class="p-2 w-11 h-11 rounded-full flex items-center justify-center border transition-colors" style="border-color: var(--border-color); background-color: rgba(122,167,255,.10); color: var(--primary);">
+          <i class="ph ph-export text-xl"></i>
+        </button>
+      </div>
     </header>
 
     <section class="card p-6 mb-5 flex flex-col items-center">
@@ -360,7 +365,8 @@
     currentTimeSeries: [],
     currentMa7Data: [],
     draft: { weight: 70.0, workout: false, diet: false },
-    lastSavedRecordDate: null
+    lastSavedRecordDate: null,
+    unit: localStorage.getItem('app_unit') || 'kg'
   };
 
   const ui = {
@@ -378,6 +384,7 @@
     trendIndicator: document.getElementById('weight-trend-indicator'),
     chartRange: document.getElementById('chart-range'),
     btnExport: document.getElementById('btn-export'),
+    btnUnitToggle: document.getElementById('btn-unit-toggle'),
     btnAI: document.getElementById('btn-ai-analyze'),
     btnWorkout: document.getElementById('btn-workout'),
     btnDiet: document.getElementById('btn-diet'),
@@ -399,6 +406,40 @@
     toastIcon: document.getElementById('toast-icon'),
     toastMessage: document.getElementById('toast-message')
   };
+
+  // 辅助函数：根据当前单位获取显示数值
+  function getDisplayWeight(kgValue) {
+    if (kgValue == null) return null;
+    return state.unit === 'jin' ? kgValue * 2 : kgValue;
+  }
+
+  // 辅助函数：将显示的数值转回kg用于存储
+  function getStoreWeight(displayValue) {
+    if (displayValue == null) return null;
+    return state.unit === 'jin' ? displayValue / 2 : displayValue;
+  }
+
+  // 辅助函数：获取当前单位文本
+  function getUnitLabel() {
+    return state.unit === 'jin' ? '斤' : 'kg';
+  }
+
+  // 绑定单位切换事件
+  ui.btnUnitToggle.addEventListener('click', () => {
+    state.unit = state.unit === 'kg' ? 'jin' : 'kg';
+    localStorage.setItem('app_unit', state.unit);
+    ui.btnUnitToggle.textContent = state.unit === 'kg' ? 'KG' : '斤';
+
+    // 修改输入区域的标题
+    document.querySelector('h2.text-sm.font-semibold.uppercase').textContent = `体重 (${state.unit.toUpperCase()})`;
+
+    // 根据当前所在视图刷新数据
+    if (!ui.inputView.classList.contains('view-hidden')) {
+      loadInputViewData();
+    } else {
+      loadTrendsViewData();
+    }
+  });
 
   function getLocalISODate(date) {
     const offset = date.getTimezoneOffset();
@@ -459,7 +500,7 @@
   }
 
   function updateDraftFromInputs() {
-    state.draft.weight = parseFloat(ui.weightInput.value);
+    state.draft.weight = getStoreWeight(parseFloat(ui.weightInput.value));
     state.draft.workout = ui.btnWorkout.classList.contains('active');
     state.draft.diet = ui.btnDiet.classList.contains('active');
 
@@ -516,7 +557,7 @@
         state.draft.diet = !!record.diet;
 
         ui.weightInput.value =
-          record.weight.toFixed(1);
+          getDisplayWeight(record.weight).toFixed(1);
 
         ui.btnSave.innerHTML =
           '<i class="ph ph-arrows-clockwise text-xl"></i> 更新今日记录';
@@ -533,7 +574,7 @@
         state.draft.diet = false;
 
         ui.weightInput.value =
-          state.draft.weight.toFixed(1);
+          getDisplayWeight(state.draft.weight).toFixed(1);
 
         ui.btnSave.innerHTML =
           '<i class="ph ph-check-circle text-xl"></i> 保存今日记录';
@@ -549,7 +590,7 @@
     }
   }
 
-  async function updateTrendIndicator() {
+async function updateTrendIndicator() {
     try {
       const currentVal = parseFloat(ui.weightInput.value);
 
@@ -567,18 +608,18 @@
         await db.records.get(yesterdayStr);
 
       if (yesterdayRecord) {
-        const diff =
-          currentVal - yesterdayRecord.weight;
+        const yesterdayDisplay = getDisplayWeight(yesterdayRecord.weight);
+        const diff = currentVal - yesterdayDisplay;
 
         if (Math.abs(diff) < 0.05) {
           ui.trendIndicator.innerHTML =
             `<span style="color:var(--text-muted)">与昨天持平</span>`;
         } else if (diff > 0) {
           ui.trendIndicator.innerHTML =
-            `<span style="color:var(--danger)">↑ +${diff.toFixed(1)}kg vs 昨天</span>`;
+            `<span style="color:var(--danger)">↑ +${diff.toFixed(1)}${getUnitLabel()} vs 昨天</span>`;
         } else {
           ui.trendIndicator.innerHTML =
-            `<span style="color:var(--accent)">↓ ${diff.toFixed(1)}kg vs 昨天</span>`;
+            `<span style="color:var(--accent)">↓ ${Math.abs(diff).toFixed(1)}${getUnitLabel()} vs 昨天</span>`;
         }
 
         ui.trendIndicator.style.opacity = '1';
@@ -590,12 +631,13 @@
   }
 
   function adjustWeight(amount) {
-    let current =
-      parseFloat(ui.weightInput.value) || 0;
-
+    let current = parseFloat(ui.weightInput.value) || 0;
     let next = current + amount;
 
-    next = Math.max(20, Math.min(300, next));
+    // 上下限控制（转换为kg进行绝对判断，再转回来）
+    let nextKg = getStoreWeight(next);
+    nextKg = Math.max(20, Math.min(300, nextKg));
+    next = getDisplayWeight(nextKg);
 
     ui.weightInput.value = next.toFixed(1);
 
@@ -607,16 +649,17 @@
   }
 
   async function saveRecord() {
-    const weightVal = parseFloat(ui.weightInput.value);
+    let displayVal = parseFloat(ui.weightInput.value);
 
-    if (Number.isNaN(weightVal) || weightVal <= 0) {
+    if (Number.isNaN(displayVal) || displayVal <= 0) {
       showToast('请输入有效体重', 'warning');
       return;
     }
 
+    // 存入数据库前必须转回 kg
     const record = {
       date: state.currentRecordDate,
-      weight: weightVal,
+      weight: getStoreWeight(displayVal),
       workout: !!state.draft.workout,
       diet: !!state.draft.diet,
       timestamp: Date.now()
@@ -745,7 +788,7 @@
       );
 
     const liveWeight =
-      parseFloat(ui.weightInput.value);
+      getStoreWeight(parseFloat(ui.weightInput.value));
 
     const liveRecord = {
       date: state.todayDateStr,
@@ -946,33 +989,23 @@ function analyzeSeries(timeSeries, ma7Data) {
         .filter(v => v != null)
         .slice(-1)[0];
 
+    const unitText = getUnitLabel();
+
     ui.statStartWeight.innerHTML =
-      `${startWeight?.toFixed(1) || '--.-'}
-      <span class="text-xs font-normal" style="color:var(--text-muted)">kg</span>`;
+      `${getDisplayWeight(startWeight)?.toFixed(1) || '--.-'} <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
 
     ui.statCurrentWeight.innerHTML =
-      `${latestWeight?.toFixed(1) || '--.-'}
-      <span class="text-xs font-normal" style="color:var(--text-muted)">kg</span>`;
+      `${getDisplayWeight(latestWeight)?.toFixed(1) || '--.-'} <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
 
-    const change =
-      analysis.totalChange;
-
-    const sign =
-      change > 0 ? '+' : '';
-
-    const color =
-      change > 0
-        ? 'var(--danger)'
-        : 'var(--accent)';
+    const displayChange = getDisplayWeight(analysis.totalChange);
+    const sign = displayChange > 0 ? '+' : '';
+    const color = displayChange > 0 ? 'var(--danger)' : 'var(--accent)';
 
     ui.statTotalChange.innerHTML =
-      `<span style="color:${color}">
-      ${sign}${change}
-      </span>
-      <span class="text-xs font-normal" style="color:var(--text-muted)">kg</span>`;
+      `<span style="color:${color}">${sign}${displayChange.toFixed(1)}</span> <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
 
     ui.statMa7.innerHTML =
-      `${latestEMA?.toFixed(1) || '--.-'} kg`;
+      `${getDisplayWeight(latestEMA)?.toFixed(1) || '--.-'} ${unitText}`;
 
     ui.statDiscipline.innerHTML =
       `${analysis.disciplineScore}/100`;
@@ -1171,11 +1204,15 @@ function analyzeSeries(timeSeries, ma7Data) {
           ma7Data
         );
 
+      const displayRawWeights = rawWeights.map(w => getDisplayWeight(w));
+      const displayActualWeights = actualWeights.map(w => getDisplayWeight(w));
+      const displayMa7Data = ma7Data.map(w => getDisplayWeight(w));
+
       renderChart(
         labels,
-        rawWeights,
-        actualWeights,
-        ma7Data
+        displayRawWeights,
+        displayActualWeights,
+        displayMa7Data
       );
 
       updateTrendStats(
@@ -1309,6 +1346,9 @@ function analyzeSeries(timeSeries, ma7Data) {
 
     state.currentRecordDate =
       state.todayDateStr;
+
+    ui.btnUnitToggle.textContent = state.unit === 'kg' ? 'KG' : '斤';
+    document.querySelector('h2.text-sm.font-semibold.uppercase').textContent = `体重 (${state.unit.toUpperCase()})`;
 
     switchView('input');
 
