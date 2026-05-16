@@ -249,6 +249,36 @@
       </div>
     </section>
 
+    <section class="card p-5 mb-5">
+      <h2 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--text-muted);">身体客观指标</h2>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="text-xs mb-1 block" style="color: var(--text-muted);">身高 (cm)</label>
+          <input type="number" id="height-input" step="0.5" class="w-full bg-transparent border rounded-xl px-3 py-2 text-lg font-bold focus:outline-none" style="border-color: var(--border-color); color: var(--text-main);" placeholder="例如: 175" />
+        </div>
+        <div>
+          <label class="text-xs mb-1 block" style="color: var(--text-muted);">腰围 (cm) - 选填</label>
+          <input type="number" id="waist-input" step="0.1" class="w-full bg-transparent border rounded-xl px-3 py-2 text-lg font-bold focus:outline-none" style="border-color: var(--border-color); color: var(--text-main);" placeholder="例如: 80.5" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between p-3 rounded-xl border" style="border-color: var(--border-color); background: rgba(255,255,255,0.02);">
+        <span class="text-sm font-medium" style="color: var(--text-muted);">今日 BMI 指数</span>
+        <div class="text-right flex items-center gap-2">
+          <span id="bmi-display" class="text-xl font-bold">--.-</span>
+          <span id="bmi-label" class="chip" style="font-size: 10px;">待计算</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card p-5 mb-5">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">执行复盘</h2>
+      </div>
+      <textarea id="note-input" rows="2" class="w-full bg-transparent border rounded-xl px-3 py-3 text-sm focus:outline-none resize-none" style="border-color: var(--border-color); color: var(--text-main);" placeholder="客观记录今日饮食偏差、睡眠状态或特殊变量（如：高碳水日、失眠）..."></textarea>
+    </section>
+
     <button id="btn-save" class="w-full py-4 rounded-2xl font-bold text-lg text-white shadow-lg active:scale-[0.98] transition-transform flex justify-center items-center gap-2" style="background-color: var(--primary); box-shadow: 0 18px 30px rgba(59, 130, 246, .25);">
       <i class="ph ph-check-circle text-xl"></i>
       保存今日记录
@@ -267,17 +297,26 @@
 
     <section class="card p-4 mb-5">
       <div class="grid grid-cols-3 gap-3">
-        <div class="metric-badge">
-          <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">起始体重</p>
-          <p id="stat-start-weight" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+        <div class="metric-badge flex flex-col justify-between">
+          <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">起始数据</p>
+          <div>
+            <p id="stat-start-weight" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+            <p id="stat-start-bmi" class="text-[10px] mt-0.5 font-medium" style="color: var(--text-muted);">BMI: --.-</p>
+          </div>
         </div>
-        <div class="metric-badge">
-          <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">当前体重</p>
-          <p id="stat-current-weight" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+        <div class="metric-badge flex flex-col justify-between">
+          <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">当前数据</p>
+          <div>
+            <p id="stat-current-weight" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+            <p id="stat-current-bmi" class="text-[10px] mt-0.5 font-medium" style="color: var(--text-muted);">BMI: --.-</p>
+          </div>
         </div>
-        <div class="metric-badge">
+        <div class="metric-badge flex flex-col justify-between">
           <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">累计变化</p>
-          <p id="stat-total-change" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+          <div>
+            <p id="stat-total-change" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+            <p id="stat-change-bmi" class="text-[10px] mt-0.5 font-medium" style="color: var(--text-muted);">Δ BMI: --.-</p>
+          </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3 mt-3 text-xs">
@@ -305,14 +344,18 @@
         <canvas id="trendChart"></canvas>
       </div>
 
-      <div class="flex flex-wrap justify-center gap-3 mt-4 text-xs" style="color: var(--text-muted);">
-        <div class="flex items-center gap-1">
-          <span class="w-3 h-3 rounded-full opacity-50" style="background-color: var(--text-muted);"></span>
+      <div class="flex flex-wrap justify-center gap-4 mt-4 text-xs" style="color: var(--text-muted);">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full opacity-50" style="background-color: var(--text-muted);"></span>
           <span>单日体重</span>
         </div>
-        <div class="flex items-center gap-1">
-          <span class="w-4 h-1 rounded-full" style="background-color: var(--primary);"></span>
-<span class="font-medium">EMA 趋势线</span>
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-1 rounded-full" style="background-color: var(--primary);"></span>
+          <span class="font-medium" style="color: var(--primary);">EMA7 (快线)</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-1 rounded-full" style="background-color: var(--accent);"></span>
+          <span class="font-medium" style="color: var(--accent);">EMA21 (慢线)</span>
         </div>
       </div>
     </section>
@@ -357,6 +400,7 @@
 <script>
   const db = new Dexie('WeightTrackerDB');
   db.version(1).stores({ records: 'date, weight, workout, diet' });
+  db.version(2).upgrade(tx => {});
 
   const state = {
     chartInstance: null,
@@ -364,9 +408,10 @@
     currentRecordDate: getLocalISODate(new Date()),
     currentTimeSeries: [],
     currentMa7Data: [],
-    draft: { weight: 70.0, workout: false, diet: false },
+    draft: { weight: 70.0, workout: false, diet: false, waist: null, note: '' },
     lastSavedRecordDate: null,
-    unit: localStorage.getItem('app_unit') || 'kg'
+    unit: localStorage.getItem('app_unit') || 'kg',
+    height: localStorage.getItem('app_user_height') ? parseFloat(localStorage.getItem('app_user_height')) : null
   };
 
   const ui = {
@@ -392,6 +437,11 @@
     workoutChip: document.getElementById('workout-chip'),
     dietChip: document.getElementById('diet-chip'),
     draftSyncTip: document.getElementById('draft-sync-tip'),
+    heightInput: document.getElementById('height-input'),
+    waistInput: document.getElementById('waist-input'),
+    noteInput: document.getElementById('note-input'),
+    bmiDisplay: document.getElementById('bmi-display'),
+    bmiLabel: document.getElementById('bmi-label'),
     statStartWeight: document.getElementById('stat-start-weight'),
     statCurrentWeight: document.getElementById('stat-current-weight'),
     statTotalChange: document.getElementById('stat-total-change'),
@@ -485,6 +535,39 @@
     }, 2600);
   }
 
+  function renderDynamicBMI() {
+    const weightKg = getStoreWeight(parseFloat(ui.weightInput.value));
+    const heightCm = parseFloat(ui.heightInput.value);
+
+    if (weightKg > 0 && heightCm > 0) {
+      localStorage.setItem('app_user_height', heightCm);
+      state.height = heightCm;
+
+      const heightM = heightCm / 100;
+      const bmi = weightKg / (heightM * heightM);
+
+      ui.bmiDisplay.textContent = bmi.toFixed(1);
+      ui.bmiDisplay.style.color = 'var(--text-main)';
+
+      let label = '';
+      let color = '';
+      if (bmi < 18.5) { label = '偏瘦'; color = 'var(--warning)'; }
+      else if (bmi < 24.0) { label = '正常'; color = 'var(--accent)'; }
+      else if (bmi < 28.0) { label = '超重'; color = 'var(--warning)'; }
+      else { label = '肥胖'; color = 'var(--danger)'; }
+
+      ui.bmiLabel.textContent = label;
+      ui.bmiLabel.style.color = color;
+      ui.bmiLabel.style.borderColor = color;
+    } else {
+      ui.bmiDisplay.textContent = '--.-';
+      ui.bmiDisplay.style.color = 'var(--text-muted)';
+      ui.bmiLabel.textContent = '需输入身高';
+      ui.bmiLabel.style.color = 'var(--text-muted)';
+      ui.bmiLabel.style.borderColor = 'var(--border-color)';
+    }
+  }
+
   function updateDisciplineVisual() {
     const active =
       state.draft.workout &&
@@ -501,10 +584,16 @@
 
   function updateDraftFromInputs() {
     state.draft.weight = getStoreWeight(parseFloat(ui.weightInput.value));
+
+    const waistVal = parseFloat(ui.waistInput.value);
+    state.draft.waist = Number.isNaN(waistVal) ? null : waistVal;
+
+    state.draft.note = ui.noteInput.value.trim();
     state.draft.workout = ui.btnWorkout.classList.contains('active');
     state.draft.diet = ui.btnDiet.classList.contains('active');
 
     syncDisciplineUI();
+    renderDynamicBMI();
   }
 
   function syncDisciplineUI() {
@@ -545,8 +634,11 @@
   }
 
   async function loadInputViewData() {
-    ui.dateDisplay.textContent =
-      formatDateLabel(state.currentRecordDate);
+    ui.dateDisplay.textContent = formatDateLabel(state.currentRecordDate);
+
+    if (state.height) {
+      ui.heightInput.value = state.height;
+    }
 
     try {
       const record = await db.records.get(state.currentRecordDate);
@@ -555,34 +647,34 @@
         state.draft.weight = record.weight;
         state.draft.workout = !!record.workout;
         state.draft.diet = !!record.diet;
+        state.draft.waist = record.waist || null;
+        state.draft.note = record.note || '';
 
-        ui.weightInput.value =
-          getDisplayWeight(record.weight).toFixed(1);
+        ui.weightInput.value = getDisplayWeight(record.weight).toFixed(1);
+        ui.waistInput.value = state.draft.waist !== null ? state.draft.waist : '';
+        ui.noteInput.value = state.draft.note;
 
-        ui.btnSave.innerHTML =
-          '<i class="ph ph-arrows-clockwise text-xl"></i> 更新今日记录';
-
+        ui.btnSave.innerHTML = '<i class="ph ph-arrows-clockwise text-xl"></i> 更新今日记录';
         state.lastSavedRecordDate = record.date;
       } else {
-        const lastRecord =
-          await db.records.orderBy('date').reverse().first();
+        const lastRecord = await db.records.orderBy('date').reverse().first();
 
-        state.draft.weight =
-          lastRecord ? lastRecord.weight : 70.0;
-
+        state.draft.weight = lastRecord ? lastRecord.weight : 70.0;
         state.draft.workout = false;
         state.draft.diet = false;
+        state.draft.waist = lastRecord?.waist || null;
+        state.draft.note = '';
 
-        ui.weightInput.value =
-          getDisplayWeight(state.draft.weight).toFixed(1);
+        ui.weightInput.value = getDisplayWeight(state.draft.weight).toFixed(1);
+        ui.waistInput.value = state.draft.waist !== null ? state.draft.waist : '';
+        ui.noteInput.value = '';
 
-        ui.btnSave.innerHTML =
-          '<i class="ph ph-check-circle text-xl"></i> 保存今日记录';
+        ui.btnSave.innerHTML = '<i class="ph ph-check-circle text-xl"></i> 保存今日记录';
       }
 
       syncDisciplineUI();
-
       updateTrendIndicator();
+      renderDynamicBMI();
 
     } catch (error) {
       console.error(error);
@@ -660,6 +752,8 @@ async function updateTrendIndicator() {
     const record = {
       date: state.currentRecordDate,
       weight: getStoreWeight(displayVal),
+      waist: state.draft.waist,
+      note: state.draft.note,
       workout: !!state.draft.workout,
       diet: !!state.draft.diet,
       timestamp: Date.now()
@@ -819,31 +913,25 @@ async function updateTrendIndicator() {
     return merged;
   }
 
-function analyzeSeries(timeSeries, ma7Data) {
+  function analyzeSeries(timeSeries, ma7Data, ma21Data) {
+    const validWeights = timeSeries.filter(i => i.weight != null).map(i => i.weight);
 
-    const validWeights = timeSeries
-      .filter(i => i.weight != null)
-      .map(i => i.weight);
+    // 计算快线斜率 (近7天)
+    const recentEMA7 = ma7Data.slice(-7).filter(v => v != null);
+    const slope = recentEMA7.length > 1 ? Number((recentEMA7[recentEMA7.length - 1] - recentEMA7[0]).toFixed(3)) : 0;
 
-    // 1. 优先计算所有指标（添加了空数据保护以避免运算出 NaN）
+    // 获取最新快慢线数值用于位置比较
+    const latestEMA7 = ma7Data.filter(v => v != null).pop();
+    const latestEMA21 = ma21Data.filter(v => v != null).pop();
     
-    // 计算斜率
-    const recentEMA = ma7Data.slice(-7).filter(v => v != null);
-    const slope = recentEMA.length > 1 
-      ? Number((recentEMA[recentEMA.length - 1] - recentEMA[0]).toFixed(3)) 
-      : 0;
+    // 计算两线差值 (快线 - 慢线)
+    const emaDiff = (latestEMA7 && latestEMA21) ? (latestEMA7 - latestEMA21) : 0;
 
     // 计算波动率
     const recentWeights = validWeights.slice(-7);
-    const avg = recentWeights.length > 0 
-      ? recentWeights.reduce((a, b) => a + b, 0) / recentWeights.length 
-      : 0;
-    const variance = recentWeights.length > 0 
-      ? recentWeights.reduce((sum, w) => sum + Math.pow(w - avg, 2), 0) / recentWeights.length 
-      : 0;
-    const volatility = recentWeights.length > 0 
-      ? Math.sqrt(variance).toFixed(2) 
-      : "0.00";
+    const avg = recentWeights.length > 0 ? recentWeights.reduce((a, b) => a + b, 0) / recentWeights.length : 0;
+    const variance = recentWeights.length > 0 ? recentWeights.reduce((sum, w) => sum + Math.pow(w - avg, 2), 0) / recentWeights.length : 0;
+    const volatility = recentWeights.length > 0 ? Math.sqrt(variance).toFixed(2) : "0.00";
 
     // 计算纪律分
     const recentRecords = timeSeries.filter(i => i.actualRecord).slice(-7);
@@ -852,80 +940,63 @@ function analyzeSeries(timeSeries, ma7Data) {
       if (r.actualRecord.workout) disciplineScore += 50;
       if (r.actualRecord.diet) disciplineScore += 50;
     });
-    disciplineScore = recentRecords.length > 0 
-      ? Math.round(disciplineScore / recentRecords.length) 
-      : 0;
+    disciplineScore = recentRecords.length > 0 ? Math.round(disciplineScore / recentRecords.length) : 0;
 
-    // 计算累计变化
     const latest = validWeights.length > 0 ? validWeights[validWeights.length - 1] : 0;
     const start = validWeights.length > 0 ? validWeights[0] : 0;
     const totalChange = validWeights.length > 0 ? Number((latest - start).toFixed(1)) : 0;
 
-    // 统一定义 Meta 标签 (贴合你描述的设计稿格式)
     const metaTags = [
       `纪律 ${disciplineScore}%`,
       `波动 ${volatility}kg`,
       `斜率 ${slope}`,
-      `累计 ${totalChange}kg`
+      `均线差 ${emaDiff > 0 ? '+' : ''}${emaDiff.toFixed(2)}kg`
     ];
 
-    // 2. 根据数据量或趋势情况输出不同的 UI 状态
-    
     let result = {
       title: '趋势稳定',
-      desc: '当前体重处于正常降噪区间，重点继续观察 EMA 趋势。',
+      desc: '快慢线黏合，目前处于正常的震荡降噪区间，保持既定纪律即可。',
       icon: 'ph-activity',
       color: 'var(--primary)',
       bg: 'rgba(59,130,246,0.08)'
     };
 
-    if (validWeights.length < 5) {
+    if (validWeights.length < 21) {
       result = {
-        title: '数据量不足',
-        desc: '继续记录，数据越连续，趋势判断越稳定。',
+        title: '正在建立慢线模型',
+        desc: '数据不足21天，慢线（EMA21）尚未稳定，继续坚持打卡以完善趋势模型。',
         icon: 'ph-info',
         color: 'var(--text-muted)',
         bg: 'rgba(148,163,184,0.08)'
       };
-    }
-    else if (slope <= -0.4) {
+    } else if (emaDiff < -0.2 && slope < 0) {
+      // 快线在慢线下方，且快线向下走
       result = {
-        title: '脂肪下降趋势明确',
-        desc: `EMA趋势下降 ${Math.abs(slope)}kg，纪律 ${disciplineScore} 分。当前处于有效减脂周期，可继续保持。`,
+        title: '下降通道确立 (安全)',
+        desc: `快线击穿慢线并保持在下方运行，当前系统处于有效的减脂通道中。纪律分 ${disciplineScore}，请继续执行。`,
         icon: 'ph-trend-down',
         color: 'var(--accent)',
         bg: 'rgba(16,185,129,0.08)'
       };
-    }
-    else if (volatility >= 2 && Math.abs(slope) < 0.3) {
+    } else if (emaDiff > 0.2 && slope > 0) {
+      // 快线在慢线上方，且快线向上走
       result = {
-        title: '高波动低趋势',
-        desc: '近期更像水分与糖原波动，并非真实增脂。',
-        icon: 'ph-wave-sine',
-        color: 'var(--primary)',
-        bg: 'rgba(59,130,246,0.08)'
-      };
-    }
-    else if (Math.abs(slope) <= 0.15) {
-      result = {
-        title: '进入平台期',
-        desc: `趋势斜率仅 ${slope}kg。建议提高活动量或重新制造热量缺口。`,
-        icon: 'ph-minus-circle',
-        color: 'var(--warning)',
-        bg: 'rgba(245,158,11,0.08)'
-      };
-    }
-    else if (slope > 0.3) {
-      result = {
-        title: '趋势开始上移',
-        desc: '均线正在持续上移。当前热量摄入可能高于消耗。',
+        title: '趋势逆转预警',
+        desc: '快线已向上突破慢线，上升趋势确认。建议立即复盘近期的热量缺口及复盘日志。',
         icon: 'ph-trend-up',
         color: 'var(--danger)',
         bg: 'rgba(239,68,68,0.08)'
       };
+    } else if (Math.abs(emaDiff) <= 0.2 && volatility > 1.5) {
+      result = {
+        title: '高波幅震荡 (无需干预)',
+        desc: '单日波动较大，但快慢线依然黏合，未出现方向性改变。大概率是水分和储水导致，切勿冲动修改计划。',
+        icon: 'ph-wave-sine',
+        color: 'var(--warning)',
+        bg: 'rgba(245,158,11,0.08)'
+      };
     }
 
-    // 3. 返回包含所有已计算指标的完整对象
     return {
       ...result,
       meta: metaTags,
@@ -964,182 +1035,133 @@ function analyzeSeries(timeSeries, ma7Data) {
         .join('');
   }
 
-  function updateTrendStats(
-    timeSeries,
-    ma7Data,
-    analysis
-  ) {
+  function updateTrendStats(timeSeries, ma7Data, analysis) {
+    const startRecord = timeSeries.find(x => x.actualRecord);
+    const latestRecord = [...timeSeries].reverse().find(x => x.actualRecord);
 
-    const startRecord =
-      timeSeries.find(x => x.actualRecord);
-
-    const latestRecord =
-      [...timeSeries]
-        .reverse()
-        .find(x => x.actualRecord);
-
-    const latestWeight =
-      latestRecord?.weight;
-
-    const startWeight =
-      startRecord?.weight;
-
-    const latestEMA =
-      ma7Data
-        .filter(v => v != null)
-        .slice(-1)[0];
-
+    const latestWeight = latestRecord?.weight;
+    const startWeight = startRecord?.weight;
+    const latestEMA = ma7Data.filter(v => v != null).slice(-1)[0];
     const unitText = getUnitLabel();
 
-    ui.statStartWeight.innerHTML =
-      `${getDisplayWeight(startWeight)?.toFixed(1) || '--.-'} <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
-
-    ui.statCurrentWeight.innerHTML =
-      `${getDisplayWeight(latestWeight)?.toFixed(1) || '--.-'} <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
+    // 1. 更新原有的体重 UI
+    ui.statStartWeight.innerHTML = `${getDisplayWeight(startWeight)?.toFixed(1) || '--.-'} <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
+    ui.statCurrentWeight.innerHTML = `${getDisplayWeight(latestWeight)?.toFixed(1) || '--.-'} <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
 
     const displayChange = getDisplayWeight(analysis.totalChange);
     const sign = displayChange > 0 ? '+' : '';
     const color = displayChange > 0 ? 'var(--danger)' : 'var(--accent)';
 
-    ui.statTotalChange.innerHTML =
-      `<span style="color:${color}">${sign}${displayChange.toFixed(1)}</span> <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
+    ui.statTotalChange.innerHTML = `<span style="color:${color}">${sign}${displayChange.toFixed(1)}</span> <span class="text-xs font-normal" style="color:var(--text-muted)">${unitText}</span>`;
+    ui.statMa7.innerHTML = `${getDisplayWeight(latestEMA)?.toFixed(1) || '--.-'} ${unitText}`;
+    ui.statDiscipline.innerHTML = `${analysis.disciplineScore}/100`;
 
-    ui.statMa7.innerHTML =
-      `${getDisplayWeight(latestEMA)?.toFixed(1) || '--.-'} ${unitText}`;
+    // 2. 新增：计算并渲染 BMI 变化
+    const heightM = state.height ? state.height / 100 : null;
+    let startBMI = '--.-';
+    let latestBMI = '--.-';
+    let changeBMI = '--.-';
 
-    ui.statDiscipline.innerHTML =
-      `${analysis.disciplineScore}/100`;
+    if (heightM && heightM > 0) {
+      if (startWeight) startBMI = (startWeight / (heightM * heightM)).toFixed(1);
+      if (latestWeight) latestBMI = (latestWeight / (heightM * heightM)).toFixed(1);
+      
+      if (startWeight && latestWeight) {
+        const diff = (latestWeight - startWeight) / (heightM * heightM);
+        const diffSign = diff > 0 ? '+' : '';
+        changeBMI = `${diffSign}${diff.toFixed(1)}`;
+      }
+    }
+
+    // 绑定 DOM 并赋值
+    const elStartBmi = document.getElementById('stat-start-bmi');
+    const elCurrentBmi = document.getElementById('stat-current-bmi');
+    const elChangeBmi = document.getElementById('stat-change-bmi');
+
+    elStartBmi.textContent = `BMI: ${startBMI}`;
+    elCurrentBmi.textContent = `BMI: ${latestBMI}`;
+    elChangeBmi.textContent = `Δ BMI: ${changeBMI}`;
+
+    // 为 BMI 变化率赋予颜色反馈
+    if (changeBMI !== '--.-') {
+      const numChange = parseFloat(changeBMI);
+      if (numChange < 0) {
+        elChangeBmi.style.color = 'var(--accent)';
+      } else if (numChange > 0) {
+        elChangeBmi.style.color = 'var(--danger)';
+      } else {
+        elChangeBmi.style.color = 'var(--text-muted)';
+      }
+    }
   }
 
-  function renderChart(
-    labels,
-    rawWeights,
-    actualWeights,
-    ma7Data
-  ) {
+  function renderChart(labels, rawWeights, actualWeights, ma7Data, ma21Data) {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    if (state.chartInstance) state.chartInstance.destroy();
 
-    const ctx =
-      document
-        .getElementById('trendChart')
-        .getContext('2d');
+    const style = getComputedStyle(document.body);
+    const primaryColor = style.getPropertyValue('--primary').trim();
+    const accentColor = style.getPropertyValue('--accent').trim();
+    const mutedColor = style.getPropertyValue('--text-muted').trim();
+    const gridColor = style.getPropertyValue('--border-color').trim();
 
-    if (state.chartInstance)
-      state.chartInstance.destroy();
+    const validWeights = rawWeights.filter(v => v != null);
+    if (validWeights.length === 0) return;
 
-    const style =
-      getComputedStyle(document.body);
-
-    const primaryColor =
-      style.getPropertyValue('--primary').trim();
-
-    const mutedColor =
-      style.getPropertyValue('--text-muted').trim();
-
-    const gridColor =
-      style.getPropertyValue('--border-color').trim();
-
-    const validWeights =
-      rawWeights.filter(v => v != null);
-
-    const minWeight =
-      Math.min(...validWeights);
-
-    const maxWeight =
-      Math.max(...validWeights);
-
+    const minWeight = Math.min(...validWeights);
+    const maxWeight = Math.max(...validWeights);
     const padding = 1.5;
 
     state.chartInstance = new Chart(ctx, {
       type: 'line',
-
       data: {
         labels,
-
         datasets: [
           {
-            label: 'EMA趋势线',
-
+            label: 'EMA7 (快线)',
             data: ma7Data,
-
             borderColor: primaryColor,
-
-            backgroundColor:
-              'rgba(59,130,246,0.08)',
-
+            backgroundColor: 'rgba(59,130,246,0.08)',
             fill: true,
-
-            borderWidth: 3,
-
+            borderWidth: 2.5,
             pointRadius: 0,
-
-            pointHoverRadius: 6,
-
-            pointHoverBorderWidth: 2,
-
+            pointHoverRadius: 5,
             tension: 0.4
           },
-
+          {
+            label: 'EMA21 (慢线)',
+            data: ma21Data,
+            borderColor: accentColor,
+            borderWidth: 2,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            tension: 0.4
+          },
           {
             label: '实际体重',
-
             data: actualWeights,
-
             borderColor: mutedColor,
-
             backgroundColor: mutedColor,
-
             borderWidth: 1,
-
-            borderDash: [5, 5],
-
-            pointRadius: 3,
-
+            pointRadius: 2.5,
             tension: 0.2,
-
             spanGaps: true
           }
         ]
       },
-
       options: {
         responsive: true,
-
         maintainAspectRatio: false,
-
-        interaction: {
-          mode: 'index',
-          intersect: false
-        },
-
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
         scales: {
-          x: {
-            grid: {
-              display: false
-            },
-
-            ticks: {
-              color: mutedColor
-            }
-          },
-
+          x: { grid: { display: false }, ticks: { color: mutedColor, maxTicksLimit: 7 } },
           y: {
             min: Math.floor(minWeight - padding),
-
             max: Math.ceil(maxWeight + padding),
-
-            grid: {
-              color: gridColor
-            },
-
-            ticks: {
-              color: mutedColor
-            }
+            grid: { color: gridColor },
+            ticks: { color: mutedColor }
           }
         }
       }
@@ -1189,30 +1211,25 @@ function analyzeSeries(timeSeries, ma7Data) {
             : null
         );
 
-      const ma7Data =
-        calculateEMA(timeSeries, 7);
+      const ma7Data = calculateEMA(timeSeries, 7);
+      const ma21Data = calculateEMA(timeSeries, 21);
 
-      state.currentTimeSeries =
-        timeSeries;
+      state.currentTimeSeries = timeSeries;
+      state.currentMa7Data = ma7Data;
 
-      state.currentMa7Data =
-        ma7Data;
-
-      const analysis =
-        analyzeSeries(
-          timeSeries,
-          ma7Data
-        );
+      const analysis = analyzeSeries(timeSeries, ma7Data, ma21Data);
 
       const displayRawWeights = rawWeights.map(w => getDisplayWeight(w));
       const displayActualWeights = actualWeights.map(w => getDisplayWeight(w));
       const displayMa7Data = ma7Data.map(w => getDisplayWeight(w));
+      const displayMa21Data = ma21Data.map(w => getDisplayWeight(w));
 
       renderChart(
         labels,
         displayRawWeights,
         displayActualWeights,
-        displayMa7Data
+        displayMa7Data,
+        displayMa21Data
       );
 
       updateTrendStats(
@@ -1338,6 +1355,10 @@ function analyzeSeries(timeSeries, ma7Data) {
     'change',
     loadTrendsViewData
   );
+
+  ui.heightInput.addEventListener('input', renderDynamicBMI);
+  ui.waistInput.addEventListener('input', updateDraftFromInputs);
+  ui.noteInput.addEventListener('input', updateDraftFromInputs);
 
   async function initApp() {
 
