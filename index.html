@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>体重追踪者 - 高级趋势分析</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <style>
+    :root {
+      --bg-color: #0b1220;
+      --card-bg: rgba(15, 23, 42, 0.92);
+      --card-bg-rgb: 15, 23, 42;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #7aa7ff;
+      --primary-hover: #4f87ff;
+      --accent: #34d399;
+      --warning: #f59e0b;
+      --danger: #fb7185;
+      --border-color: rgba(148, 163, 184, 0.18);
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-color: #f7fafc;
+        --card-bg: rgba(255, 255, 255, 0.96);
+        --card-bg-rgb: 255, 255, 255;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --accent: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --border-color: #e2e8f0;
+        --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(circle at top left, rgba(122,167,255,0.12), transparent 34%),
+        radial-gradient(circle at top right, rgba(52,211,153,0.10), transparent 28%),
+        var(--bg-color);
+      color: var(--text-main);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .view-hidden { display: none !important; }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+      background: transparent;
+      color: var(--text-main);
+    }
+
+    .nav-item { color: var(--text-muted); transition: .2s ease; }
+    .nav-item.active { color: var(--primary); }
+
+    .discipline-btn {
+      width: 100%;
+      border: 1px solid var(--border-color);
+      background: rgba(255,255,255,0.02);
+      border-radius: 18px;
+      padding: 14px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      text-align: left;
+      transition: transform .15s ease, border-color .15s ease, background-color .15s ease;
+    }
+    .discipline-btn:active { transform: scale(0.99); }
+    .discipline-btn.active {
+      border-color: rgba(122,167,255,0.58);
+      background: linear-gradient(135deg, rgba(122,167,255,0.16), rgba(122,167,255,0.06));
+    }
+
+    .switch {
+      width: 48px;
+      height: 28px;
+      border-radius: 9999px;
+      position: relative;
+      flex: 0 0 auto;
+      background: rgba(148,163,184,0.28);
+      transition: background-color .2s ease;
+    }
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 9999px;
+      background: white;
+      box-shadow: 0 3px 8px rgba(0,0,0,.15);
+      transition: transform .2s ease;
+    }
+    .discipline-btn.active .switch { background: var(--primary); }
+    .discipline-btn.active .switch::after { transform: translateX(20px); }
+
+    .chip {
+      border: 1px solid var(--border-color);
+      border-radius: 9999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(255,255,255,.02);
+    }
+
+    .metric-badge {
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 12px 12px;
+      background: rgba(255,255,255,.03);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -100px;
+      opacity: 0;
+      transition: all .25s ease;
+      z-index: 100;
+      pointer-events: none;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-main);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 220px;
+      max-width: calc(100vw - 24px);
+    }
+  </style>
+</head>
+<body class="pb-20">
+  <main id="view-input" class="flex-1 flex flex-col p-4 max-w-md mx-auto w-full mt-4">
+    <header class="mb-6 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">今日打卡</h1>
+        <p id="current-date-display" class="text-sm mt-1" style="color: var(--text-muted);"></p>
+      </div>
+      <button id="btn-export" title="导出数据为 JSON" class="p-2 w-11 h-11 rounded-full flex items-center justify-center border transition-colors" style="border-color: var(--border-color); background-color: rgba(122,167,255,.10); color: var(--primary);">
+        <i class="ph ph-export text-xl"></i>
+      </button>
+    </header>
+
+    <section class="card p-6 mb-5 flex flex-col items-center">
+      <h2 class="text-sm font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">体重 (KG)</h2>
+
+      <div class="flex items-center justify-center w-full mb-5">
+        <button id="btn-minus" class="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light border active:scale-95 transition-transform" style="background-color: rgba(255,255,255,.03); border-color: var(--border-color); color: var(--text-main);">-</button>
+
+        <div class="relative mx-4 flex-1 text-center">
+          <input type="number" id="weight-input" step="0.1" class="w-full text-center text-6xl font-bold focus:outline-none bg-transparent" value="70.0" inputmode="decimal" />
+          <div id="weight-trend-indicator" class="absolute -bottom-6 w-full text-center text-xs font-medium opacity-0 transition-opacity"></div>
+        </div>
+
+        <button id="btn-plus" class="w-14 h-14 rounded-full flex items-center justify-center text-3xl font-light border active:scale-95 transition-transform" style="background-color: rgba(255,255,255,.03); border-color: var(--border-color); color: var(--text-main);">+</button>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2 w-full mb-4">
+        <button class="quick-adjust p-2 rounded-lg text-sm font-medium border" data-val="-0.5" style="border-color: var(--border-color); color: var(--text-muted);">-0.5</button>
+        <button class="quick-adjust p-2 rounded-lg text-sm font-medium border" data-val="-0.1" style="border-color: var(--border-color); color: var(--text-muted);">-0.1</button>
+        <button class="quick-adjust p-2 rounded-lg text-sm font-medium border" data-val="+0.1" style="border-color: var(--border-color); color: var(--text-muted);">+0.1</button>
+        <button class="quick-adjust p-2 rounded-lg text-sm font-medium border" data-val="+0.5" style="border-color: var(--border-color); color: var(--text-muted);">+0.5</button>
+      </div>
+
+      <div class="flex items-center justify-between w-full text-xs" style="color: var(--text-muted);">
+        <span>当前值会参与趋势分析</span>
+        <span id="draft-sync-tip">草稿未保存</span>
+      </div>
+    </section>
+
+    <section class="card p-5 mb-5">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">关键纪律执行</h2>
+        <span id="discipline-score" class="chip">当前 0/2</span>
+      </div>
+
+      <button type="button" class="discipline-btn mb-3" data-key="workout" id="btn-workout">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background-color: rgba(52, 211, 153, 0.12); color: var(--accent);">
+            <i class="ph-fill ph-fire text-lg"></i>
+          </div>
+          <div>
+            <p class="font-medium text-base">完成核心训练</p>
+            <p class="text-xs mt-0.5" style="color: var(--text-muted);">至少 30 分钟有氧或力量</p>
+          </div>
+        </div>
+        <div class="switch" aria-hidden="true"></div>
+      </button>
+
+      <button type="button" class="discipline-btn" data-key="diet" id="btn-diet">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background-color: rgba(122,167,255,0.12); color: var(--primary);">
+            <i class="ph-fill ph-fork-knife text-lg"></i>
+          </div>
+          <div>
+            <p class="font-medium text-base">达成热量缺口</p>
+            <p class="text-xs mt-0.5" style="color: var(--text-muted);">按计划控制饮食摄入</p>
+          </div>
+        </div>
+        <div class="switch" aria-hidden="true"></div>
+      </button>
+
+      <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div class="chip text-center" id="workout-chip">训练：未执行</div>
+        <div class="chip text-center" id="diet-chip">饮食：未执行</div>
+      </div>
+    </section>
+
+    <button id="btn-save" class="w-full py-4 rounded-2xl font-bold text-lg text-white shadow-lg active:scale-[0.98] transition-transform flex justify-center items-center gap-2" style="background-color: var(--primary); box-shadow: 0 18px 30px rgba(59, 130, 246, .25);">
+      <i class="ph ph-check-circle text-xl"></i>
+      保存今日记录
+    </button>
+
+    <div id="save-status" class="text-center text-sm mt-3 opacity-0 transition-opacity font-medium" style="color: var(--accent);">已成功保存！</div>
+  </main>
+
+  <main id="view-trends" class="flex-1 flex flex-col p-4 max-w-md mx-auto w-full mt-4 view-hidden">
+    <header class="mb-5">
+<h1 class="text-2xl font-bold tracking-tight">
+  体重趋势智能分析
+</h1>
+      <p class="text-sm mt-1" style="color: var(--text-muted);">看均线、看斜率、看纪律，而不是盯单日波动</p>
+    </header>
+
+    <section class="card p-4 mb-5">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="metric-badge">
+          <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">起始体重</p>
+          <p id="stat-start-weight" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+        </div>
+        <div class="metric-badge">
+          <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">当前体重</p>
+          <p id="stat-current-weight" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+        </div>
+        <div class="metric-badge">
+          <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">累计变化</p>
+          <p id="stat-total-change" class="text-xl font-bold mt-1">--.- <span class="text-xs font-normal" style="color: var(--text-muted);">kg</span></p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mt-3 text-xs">
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">7日均线</p>
+          <p id="stat-ma7" class="text-lg font-bold mt-1">--.- kg</p>
+        </div>
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">近7日纪律</p>
+          <p id="stat-discipline" class="text-lg font-bold mt-1">--/--</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card p-4 mb-5 relative">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">体重曲线</h2>
+        <select id="chart-range" class="text-xs bg-transparent border rounded-xl px-2 py-1" style="color: var(--text-main); border-color: var(--border-color);">
+          <option value="30">最近30天</option>
+          <option value="90">最近90天</option>
+        </select>
+      </div>
+
+      <div class="w-full h-64 relative">
+        <canvas id="trendChart"></canvas>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-3 mt-4 text-xs" style="color: var(--text-muted);">
+        <div class="flex items-center gap-1">
+          <span class="w-3 h-3 rounded-full opacity-50" style="background-color: var(--text-muted);"></span>
+          <span>单日体重</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="w-4 h-1 rounded-full" style="background-color: var(--primary);"></span>
+<span class="font-medium">EMA 趋势线</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card p-5 border-l-4" id="rule-alert" style="border-left-color: var(--primary);">
+      <div class="flex items-start gap-3">
+        <div id="rule-icon" class="mt-0.5">
+          <i class="ph-fill ph-info text-xl" style="color: var(--text-muted);"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-start gap-3 mb-1">
+            <h3 id="rule-title" class="font-bold text-sm">系统诊断中...</h3>
+            <button id="btn-ai-analyze" title="获取 AI 深度点评" class="text-xs px-2 py-1 rounded-xl flex items-center gap-1 bg-blue-50 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/30 transition-colors">
+              <i class="ph-fill ph-sparkle"></i> AI 点评
+            </button>
+          </div>
+          <p id="rule-desc" class="text-xs leading-relaxed" style="color: var(--text-muted);">正在分析近期数据以提供建议。</p>
+          <div id="rule-meta" class="mt-3 flex flex-wrap gap-2 text-[11px]"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="fixed bottom-0 left-0 w-full backdrop-blur-md border-t z-50" style="background-color: rgba(var(--card-bg-rgb), 0.82); border-color: var(--border-color);">
+    <div class="max-w-md mx-auto flex justify-around items-center h-16">
+      <button id="nav-input" class="nav-item active flex flex-col items-center justify-center w-full h-full gap-1">
+        <i class="ph-fill ph-pencil-simple text-2xl"></i>
+        <span class="text-[10px] font-medium uppercase tracking-wider">记录</span>
+      </button>
+      <button id="nav-trends" class="nav-item flex flex-col items-center justify-center w-full h-full gap-1">
+        <i class="ph ph-trend-up text-2xl"></i>
+        <span class="text-[10px] font-medium uppercase tracking-wider">趋势</span>
+      </button>
+    </div>
+  </nav>
+
+  <div id="toast" class="toast">
+    <i id="toast-icon" class="ph-fill ph-info text-lg"></i>
+    <span id="toast-message">提示信息</span>
+  </div>
+
+<script>
+  const db = new Dexie('WeightTrackerDB');
+  db.version(1).stores({ records: 'date, weight, workout, diet' });
+
+  const state = {
+    chartInstance: null,
+    todayDateStr: getLocalISODate(new Date()),
+    currentRecordDate: getLocalISODate(new Date()),
+    currentTimeSeries: [],
+    currentMa7Data: [],
+    draft: { weight: 70.0, workout: false, diet: false },
+    lastSavedRecordDate: null
+  };
+
+  const ui = {
+    inputView: document.getElementById('view-input'),
+    trendsView: document.getElementById('view-trends'),
+    navInput: document.getElementById('nav-input'),
+    navTrends: document.getElementById('nav-trends'),
+    weightInput: document.getElementById('weight-input'),
+    btnMinus: document.getElementById('btn-minus'),
+    btnPlus: document.getElementById('btn-plus'),
+    quickAdjusts: document.querySelectorAll('.quick-adjust'),
+    btnSave: document.getElementById('btn-save'),
+    saveStatus: document.getElementById('save-status'),
+    dateDisplay: document.getElementById('current-date-display'),
+    trendIndicator: document.getElementById('weight-trend-indicator'),
+    chartRange: document.getElementById('chart-range'),
+    btnExport: document.getElementById('btn-export'),
+    btnAI: document.getElementById('btn-ai-analyze'),
+    btnWorkout: document.getElementById('btn-workout'),
+    btnDiet: document.getElementById('btn-diet'),
+    disciplineScore: document.getElementById('discipline-score'),
+    workoutChip: document.getElementById('workout-chip'),
+    dietChip: document.getElementById('diet-chip'),
+    draftSyncTip: document.getElementById('draft-sync-tip'),
+    statStartWeight: document.getElementById('stat-start-weight'),
+    statCurrentWeight: document.getElementById('stat-current-weight'),
+    statTotalChange: document.getElementById('stat-total-change'),
+    statMa7: document.getElementById('stat-ma7'),
+    statDiscipline: document.getElementById('stat-discipline'),
+    ruleAlert: document.getElementById('rule-alert'),
+    ruleTitle: document.getElementById('rule-title'),
+    ruleDesc: document.getElementById('rule-desc'),
+    ruleIcon: document.getElementById('rule-icon'),
+    ruleMeta: document.getElementById('rule-meta'),
+    toast: document.getElementById('toast'),
+    toastIcon: document.getElementById('toast-icon'),
+    toastMessage: document.getElementById('toast-message')
+  };
+
+  function getLocalISODate(date) {
+    const offset = date.getTimezoneOffset();
+    const offsetDate = new Date(date.getTime() - offset * 60 * 1000);
+    return offsetDate.toISOString().split('T')[0];
+  }
+
+  function formatDateLabel(dateStr) {
+    if (dateStr === state.todayDateStr) return `今天 · ${dateStr}`;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const yStr = getLocalISODate(yesterday);
+
+    if (dateStr === yStr) return `昨天 · ${dateStr}`;
+
+    return dateStr;
+  }
+
+  function showToast(message, type = 'info') {
+    ui.toastMessage.textContent = message;
+
+    if (type === 'success') {
+      ui.toastIcon.className = 'ph-fill ph-check-circle text-lg';
+      ui.toastIcon.style.color = 'var(--accent)';
+    } else if (type === 'warning') {
+      ui.toastIcon.className = 'ph-fill ph-warning-circle text-lg';
+      ui.toastIcon.style.color = 'var(--warning)';
+    } else {
+      ui.toastIcon.className = 'ph-fill ph-info text-lg';
+      ui.toastIcon.style.color = 'var(--primary)';
+    }
+
+    ui.toast.style.top = '18px';
+    ui.toast.style.opacity = '1';
+
+    clearTimeout(showToast._timer);
+
+    showToast._timer = setTimeout(() => {
+      ui.toast.style.top = '-100px';
+      ui.toast.style.opacity = '0';
+    }, 2600);
+  }
+
+  function updateDisciplineVisual() {
+    const active =
+      state.draft.workout &&
+      state.draft.diet;
+
+    ui.btnSave.style.boxShadow = active
+      ? '0 10px 30px rgba(16,185,129,0.35)'
+      : '0 10px 30px rgba(59,130,246,0.25)';
+
+    ui.btnSave.style.background = active
+      ? 'linear-gradient(135deg,#10b981,#059669)'
+      : 'linear-gradient(135deg,#3b82f6,#2563eb)';
+  }
+
+  function updateDraftFromInputs() {
+    state.draft.weight = parseFloat(ui.weightInput.value);
+    state.draft.workout = ui.btnWorkout.classList.contains('active');
+    state.draft.diet = ui.btnDiet.classList.contains('active');
+
+    syncDisciplineUI();
+  }
+
+  function syncDisciplineUI() {
+    const workout = !!state.draft.workout;
+    const diet = !!state.draft.diet;
+
+    const score = (workout ? 1 : 0) + (diet ? 1 : 0);
+
+    ui.btnWorkout.classList.toggle('active', workout);
+    ui.btnDiet.classList.toggle('active', diet);
+
+    ui.workoutChip.textContent =
+      workout ? '训练：已执行' : '训练：未执行';
+
+    ui.dietChip.textContent =
+      diet ? '饮食：已执行' : '饮食：未执行';
+
+    ui.disciplineScore.textContent = `当前 ${score}/2`;
+
+    ui.draftSyncTip.textContent =
+      score > 0
+        ? '草稿已更新，趋势分析会同步'
+        : '草稿未保存';
+
+    updateDisciplineVisual();
+
+    if (state.currentRecordDate === state.todayDateStr) {
+      refreshInsights();
+    }
+  }
+
+  function toggleDiscipline(key) {
+    state.draft[key] = !state.draft[key];
+
+    syncDisciplineUI();
+
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
+
+  async function loadInputViewData() {
+    ui.dateDisplay.textContent =
+      formatDateLabel(state.currentRecordDate);
+
+    try {
+      const record = await db.records.get(state.currentRecordDate);
+
+      if (record) {
+        state.draft.weight = record.weight;
+        state.draft.workout = !!record.workout;
+        state.draft.diet = !!record.diet;
+
+        ui.weightInput.value =
+          record.weight.toFixed(1);
+
+        ui.btnSave.innerHTML =
+          '<i class="ph ph-arrows-clockwise text-xl"></i> 更新今日记录';
+
+        state.lastSavedRecordDate = record.date;
+      } else {
+        const lastRecord =
+          await db.records.orderBy('date').reverse().first();
+
+        state.draft.weight =
+          lastRecord ? lastRecord.weight : 70.0;
+
+        state.draft.workout = false;
+        state.draft.diet = false;
+
+        ui.weightInput.value =
+          state.draft.weight.toFixed(1);
+
+        ui.btnSave.innerHTML =
+          '<i class="ph ph-check-circle text-xl"></i> 保存今日记录';
+      }
+
+      syncDisciplineUI();
+
+      updateTrendIndicator();
+
+    } catch (error) {
+      console.error(error);
+      showToast('加载本地数据失败', 'warning');
+    }
+  }
+
+  async function updateTrendIndicator() {
+    try {
+      const currentVal = parseFloat(ui.weightInput.value);
+
+      if (Number.isNaN(currentVal)) {
+        ui.trendIndicator.style.opacity = '0';
+        return;
+      }
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const yesterdayStr = getLocalISODate(yesterday);
+
+      const yesterdayRecord =
+        await db.records.get(yesterdayStr);
+
+      if (yesterdayRecord) {
+        const diff =
+          currentVal - yesterdayRecord.weight;
+
+        if (Math.abs(diff) < 0.05) {
+          ui.trendIndicator.innerHTML =
+            `<span style="color:var(--text-muted)">与昨天持平</span>`;
+        } else if (diff > 0) {
+          ui.trendIndicator.innerHTML =
+            `<span style="color:var(--danger)">↑ +${diff.toFixed(1)}kg vs 昨天</span>`;
+        } else {
+          ui.trendIndicator.innerHTML =
+            `<span style="color:var(--accent)">↓ ${diff.toFixed(1)}kg vs 昨天</span>`;
+        }
+
+        ui.trendIndicator.style.opacity = '1';
+      }
+
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function adjustWeight(amount) {
+    let current =
+      parseFloat(ui.weightInput.value) || 0;
+
+    let next = current + amount;
+
+    next = Math.max(20, Math.min(300, next));
+
+    ui.weightInput.value = next.toFixed(1);
+
+    updateDraftFromInputs();
+
+    updateTrendIndicator();
+
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
+
+  async function saveRecord() {
+    const weightVal = parseFloat(ui.weightInput.value);
+
+    if (Number.isNaN(weightVal) || weightVal <= 0) {
+      showToast('请输入有效体重', 'warning');
+      return;
+    }
+
+    const record = {
+      date: state.currentRecordDate,
+      weight: weightVal,
+      workout: !!state.draft.workout,
+      diet: !!state.draft.diet,
+      timestamp: Date.now()
+    };
+
+    try {
+      await db.records.put(record);
+
+      ui.saveStatus.style.opacity = '1';
+
+      setTimeout(() => {
+        ui.saveStatus.style.opacity = '0';
+      }, 1800);
+
+      refreshInsights();
+
+      if (!ui.trendsView.classList.contains('view-hidden')) {
+        loadTrendsViewData();
+      }
+
+      showToast('保存成功', 'success');
+
+    } catch (error) {
+      console.error(error);
+      showToast('保存失败', 'warning');
+    }
+  }
+
+  function calculateEMA(data, period = 7) {
+    const result = [];
+
+    const multiplier = 2 / (period + 1);
+
+    let ema = null;
+
+    data.forEach(item => {
+      if (item.weight == null) {
+        result.push(ema);
+        return;
+      }
+
+      if (ema === null) {
+        ema = item.weight;
+      } else {
+        ema =
+          (item.weight - ema) * multiplier + ema;
+      }
+
+      result.push(Number(ema.toFixed(2)));
+    });
+
+    return result;
+  }
+
+  function buildTimeSeries(records, days) {
+    const sorted = [...records].sort(
+      (a, b) =>
+        new Date(a.date) - new Date(b.date)
+    );
+
+    if (sorted.length === 0) return [];
+
+    const firstRecordDate =
+      new Date(sorted[0].date);
+
+    const endDate =
+      new Date(state.todayDateStr);
+
+    const startDate = new Date(
+      Math.max(
+        firstRecordDate.getTime(),
+        endDate.getTime() -
+          (days - 1) * 86400000
+      )
+    );
+
+    const recordMap = new Map();
+
+    sorted.forEach(r =>
+      recordMap.set(r.date, r)
+    );
+
+    const timeSeries = [];
+
+    let currentDate = new Date(startDate);
+
+    let lastKnownWeight = null;
+
+    while (currentDate <= endDate) {
+      const dateStr =
+        getLocalISODate(currentDate);
+
+      const record =
+        recordMap.get(dateStr);
+
+      if (record) {
+        lastKnownWeight = record.weight;
+      }
+
+      timeSeries.push({
+        date: dateStr,
+        weight: lastKnownWeight,
+        actualRecord: record || null
+      });
+
+      currentDate.setDate(
+        currentDate.getDate() + 1
+      );
+    }
+
+    return timeSeries;
+  }
+
+  function getLiveMergedSeries(timeSeries) {
+    if (
+      state.currentRecordDate !==
+      state.todayDateStr
+    ) return timeSeries;
+
+    const merged =
+      timeSeries.map(item => ({ ...item }));
+
+    const idx =
+      merged.findIndex(
+        i => i.date === state.todayDateStr
+      );
+
+    const liveWeight =
+      parseFloat(ui.weightInput.value);
+
+    const liveRecord = {
+      date: state.todayDateStr,
+      weight: liveWeight,
+      workout: state.draft.workout,
+      diet: state.draft.diet
+    };
+
+    if (idx >= 0) {
+      merged[idx] = {
+        ...merged[idx],
+        weight: Number.isFinite(liveWeight)
+          ? liveWeight
+          : merged[idx].weight,
+        actualRecord:
+          merged[idx].actualRecord || liveRecord
+      };
+    } else {
+      merged.push({
+        date: state.todayDateStr,
+        weight: Number.isFinite(liveWeight)
+          ? liveWeight
+          : null,
+        actualRecord: liveRecord
+      });
+    }
+
+    return merged;
+  }
+
+function analyzeSeries(timeSeries, ma7Data) {
+
+    const validWeights = timeSeries
+      .filter(i => i.weight != null)
+      .map(i => i.weight);
+
+    // 1. 优先计算所有指标（添加了空数据保护以避免运算出 NaN）
+    
+    // 计算斜率
+    const recentEMA = ma7Data.slice(-7).filter(v => v != null);
+    const slope = recentEMA.length > 1 
+      ? Number((recentEMA[recentEMA.length - 1] - recentEMA[0]).toFixed(3)) 
+      : 0;
+
+    // 计算波动率
+    const recentWeights = validWeights.slice(-7);
+    const avg = recentWeights.length > 0 
+      ? recentWeights.reduce((a, b) => a + b, 0) / recentWeights.length 
+      : 0;
+    const variance = recentWeights.length > 0 
+      ? recentWeights.reduce((sum, w) => sum + Math.pow(w - avg, 2), 0) / recentWeights.length 
+      : 0;
+    const volatility = recentWeights.length > 0 
+      ? Math.sqrt(variance).toFixed(2) 
+      : "0.00";
+
+    // 计算纪律分
+    const recentRecords = timeSeries.filter(i => i.actualRecord).slice(-7);
+    let disciplineScore = 0;
+    recentRecords.forEach(r => {
+      if (r.actualRecord.workout) disciplineScore += 50;
+      if (r.actualRecord.diet) disciplineScore += 50;
+    });
+    disciplineScore = recentRecords.length > 0 
+      ? Math.round(disciplineScore / recentRecords.length) 
+      : 0;
+
+    // 计算累计变化
+    const latest = validWeights.length > 0 ? validWeights[validWeights.length - 1] : 0;
+    const start = validWeights.length > 0 ? validWeights[0] : 0;
+    const totalChange = validWeights.length > 0 ? Number((latest - start).toFixed(1)) : 0;
+
+    // 统一定义 Meta 标签 (贴合你描述的设计稿格式)
+    const metaTags = [
+      `纪律 ${disciplineScore}%`,
+      `波动 ${volatility}kg`,
+      `斜率 ${slope}`,
+      `累计 ${totalChange}kg`
+    ];
+
+    // 2. 根据数据量或趋势情况输出不同的 UI 状态
+    
+    let result = {
+      title: '趋势稳定',
+      desc: '当前体重处于正常降噪区间，重点继续观察 EMA 趋势。',
+      icon: 'ph-activity',
+      color: 'var(--primary)',
+      bg: 'rgba(59,130,246,0.08)'
+    };
+
+    if (validWeights.length < 5) {
+      result = {
+        title: '数据量不足',
+        desc: '继续记录，数据越连续，趋势判断越稳定。',
+        icon: 'ph-info',
+        color: 'var(--text-muted)',
+        bg: 'rgba(148,163,184,0.08)'
+      };
+    }
+    else if (slope <= -0.4) {
+      result = {
+        title: '脂肪下降趋势明确',
+        desc: `EMA趋势下降 ${Math.abs(slope)}kg，纪律 ${disciplineScore} 分。当前处于有效减脂周期，可继续保持。`,
+        icon: 'ph-trend-down',
+        color: 'var(--accent)',
+        bg: 'rgba(16,185,129,0.08)'
+      };
+    }
+    else if (volatility >= 2 && Math.abs(slope) < 0.3) {
+      result = {
+        title: '高波动低趋势',
+        desc: '近期更像水分与糖原波动，并非真实增脂。',
+        icon: 'ph-wave-sine',
+        color: 'var(--primary)',
+        bg: 'rgba(59,130,246,0.08)'
+      };
+    }
+    else if (Math.abs(slope) <= 0.15) {
+      result = {
+        title: '进入平台期',
+        desc: `趋势斜率仅 ${slope}kg。建议提高活动量或重新制造热量缺口。`,
+        icon: 'ph-minus-circle',
+        color: 'var(--warning)',
+        bg: 'rgba(245,158,11,0.08)'
+      };
+    }
+    else if (slope > 0.3) {
+      result = {
+        title: '趋势开始上移',
+        desc: '均线正在持续上移。当前热量摄入可能高于消耗。',
+        icon: 'ph-trend-up',
+        color: 'var(--danger)',
+        bg: 'rgba(239,68,68,0.08)'
+      };
+    }
+
+    // 3. 返回包含所有已计算指标的完整对象
+    return {
+      ...result,
+      meta: metaTags,
+      disciplineScore,
+      slope,
+      volatility,
+      totalChange,
+      latest,
+      start
+    };
+  }
+  function setDiagnosticUI(result) {
+    ui.ruleAlert.style.borderLeftColor =
+      result.color;
+
+    ui.ruleAlert.style.backgroundColor =
+      result.bg;
+
+    ui.ruleTitle.textContent =
+      result.title;
+
+    ui.ruleTitle.style.color =
+      result.color;
+
+    ui.ruleDesc.textContent =
+      result.desc;
+
+    ui.ruleIcon.innerHTML =
+      `<i class="ph-fill ${result.icon} text-xl" style="color:${result.color}"></i>`;
+
+    ui.ruleMeta.innerHTML =
+      result.meta
+        .map(
+          item => `<span class="chip">${item}</span>`
+        )
+        .join('');
+  }
+
+  function updateTrendStats(
+    timeSeries,
+    ma7Data,
+    analysis
+  ) {
+
+    const startRecord =
+      timeSeries.find(x => x.actualRecord);
+
+    const latestRecord =
+      [...timeSeries]
+        .reverse()
+        .find(x => x.actualRecord);
+
+    const latestWeight =
+      latestRecord?.weight;
+
+    const startWeight =
+      startRecord?.weight;
+
+    const latestEMA =
+      ma7Data
+        .filter(v => v != null)
+        .slice(-1)[0];
+
+    ui.statStartWeight.innerHTML =
+      `${startWeight?.toFixed(1) || '--.-'}
+      <span class="text-xs font-normal" style="color:var(--text-muted)">kg</span>`;
+
+    ui.statCurrentWeight.innerHTML =
+      `${latestWeight?.toFixed(1) || '--.-'}
+      <span class="text-xs font-normal" style="color:var(--text-muted)">kg</span>`;
+
+    const change =
+      analysis.totalChange;
+
+    const sign =
+      change > 0 ? '+' : '';
+
+    const color =
+      change > 0
+        ? 'var(--danger)'
+        : 'var(--accent)';
+
+    ui.statTotalChange.innerHTML =
+      `<span style="color:${color}">
+      ${sign}${change}
+      </span>
+      <span class="text-xs font-normal" style="color:var(--text-muted)">kg</span>`;
+
+    ui.statMa7.innerHTML =
+      `${latestEMA?.toFixed(1) || '--.-'} kg`;
+
+    ui.statDiscipline.innerHTML =
+      `${analysis.disciplineScore}/100`;
+  }
+
+  function renderChart(
+    labels,
+    rawWeights,
+    actualWeights,
+    ma7Data
+  ) {
+
+    const ctx =
+      document
+        .getElementById('trendChart')
+        .getContext('2d');
+
+    if (state.chartInstance)
+      state.chartInstance.destroy();
+
+    const style =
+      getComputedStyle(document.body);
+
+    const primaryColor =
+      style.getPropertyValue('--primary').trim();
+
+    const mutedColor =
+      style.getPropertyValue('--text-muted').trim();
+
+    const gridColor =
+      style.getPropertyValue('--border-color').trim();
+
+    const validWeights =
+      rawWeights.filter(v => v != null);
+
+    const minWeight =
+      Math.min(...validWeights);
+
+    const maxWeight =
+      Math.max(...validWeights);
+
+    const padding = 1.5;
+
+    state.chartInstance = new Chart(ctx, {
+      type: 'line',
+
+      data: {
+        labels,
+
+        datasets: [
+          {
+            label: 'EMA趋势线',
+
+            data: ma7Data,
+
+            borderColor: primaryColor,
+
+            backgroundColor:
+              'rgba(59,130,246,0.08)',
+
+            fill: true,
+
+            borderWidth: 3,
+
+            pointRadius: 0,
+
+            pointHoverRadius: 6,
+
+            pointHoverBorderWidth: 2,
+
+            tension: 0.4
+          },
+
+          {
+            label: '实际体重',
+
+            data: actualWeights,
+
+            borderColor: mutedColor,
+
+            backgroundColor: mutedColor,
+
+            borderWidth: 1,
+
+            borderDash: [5, 5],
+
+            pointRadius: 3,
+
+            tension: 0.2,
+
+            spanGaps: true
+          }
+        ]
+      },
+
+      options: {
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+
+            ticks: {
+              color: mutedColor
+            }
+          },
+
+          y: {
+            min: Math.floor(minWeight - padding),
+
+            max: Math.ceil(maxWeight + padding),
+
+            grid: {
+              color: gridColor
+            },
+
+            ticks: {
+              color: mutedColor
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async function loadTrendsViewData() {
+
+    const daysToFetch =
+      parseInt(ui.chartRange.value, 10);
+
+    try {
+
+      const startDateStr =
+        getLocalISODate(
+          new Date(
+            Date.now() -
+            (daysToFetch + 7) *
+            24 * 60 * 60 * 1000
+          )
+        );
+
+      const records =
+        await db.records
+          .where('date')
+          .aboveOrEqual(startDateStr)
+          .toArray();
+
+      let timeSeries =
+        buildTimeSeries(records, daysToFetch);
+
+      timeSeries =
+        getLiveMergedSeries(timeSeries);
+
+      const labels =
+        timeSeries.map(
+          item => item.date.substring(5)
+        );
+
+      const rawWeights =
+        timeSeries.map(item => item.weight);
+
+      const actualWeights =
+        timeSeries.map(item =>
+          item.actualRecord
+            ? item.weight
+            : null
+        );
+
+      const ma7Data =
+        calculateEMA(timeSeries, 7);
+
+      state.currentTimeSeries =
+        timeSeries;
+
+      state.currentMa7Data =
+        ma7Data;
+
+      const analysis =
+        analyzeSeries(
+          timeSeries,
+          ma7Data
+        );
+
+      renderChart(
+        labels,
+        rawWeights,
+        actualWeights,
+        ma7Data
+      );
+
+      updateTrendStats(
+        timeSeries,
+        ma7Data,
+        analysis
+      );
+
+      setDiagnosticUI(analysis);
+
+    } catch (error) {
+      console.error(error);
+      showToast('加载图表失败', 'warning');
+    }
+  }
+
+  function refreshInsights() {
+    if (
+      !ui.trendsView.classList.contains(
+        'view-hidden'
+      )
+    ) {
+      loadTrendsViewData();
+    }
+  }
+
+  function switchView(viewName) {
+
+    if (viewName === 'input') {
+
+      ui.inputView.classList.remove(
+        'view-hidden'
+      );
+
+      ui.trendsView.classList.add(
+        'view-hidden'
+      );
+
+      ui.navInput.classList.add('active');
+
+      ui.navTrends.classList.remove(
+        'active'
+      );
+
+      loadInputViewData();
+
+    } else {
+
+      ui.inputView.classList.add(
+        'view-hidden'
+      );
+
+      ui.trendsView.classList.remove(
+        'view-hidden'
+      );
+
+      ui.navTrends.classList.add(
+        'active'
+      );
+
+      ui.navInput.classList.remove(
+        'active'
+      );
+
+      loadTrendsViewData();
+    }
+  }
+
+  ui.navInput.addEventListener(
+    'click',
+    () => switchView('input')
+  );
+
+  ui.navTrends.addEventListener(
+    'click',
+    () => switchView('trends')
+  );
+
+  ui.btnMinus.addEventListener(
+    'click',
+    () => adjustWeight(-0.1)
+  );
+
+  ui.btnPlus.addEventListener(
+    'click',
+    () => adjustWeight(0.1)
+  );
+
+  ui.quickAdjusts.forEach(btn => {
+    btn.addEventListener('click', e => {
+      adjustWeight(
+        parseFloat(
+          e.currentTarget.dataset.val
+        )
+      );
+    });
+  });
+
+  ui.weightInput.addEventListener(
+    'input',
+    () => {
+      updateDraftFromInputs();
+      updateTrendIndicator();
+    }
+  );
+
+  ui.btnWorkout.addEventListener(
+    'click',
+    () => toggleDiscipline('workout')
+  );
+
+  ui.btnDiet.addEventListener(
+    'click',
+    () => toggleDiscipline('diet')
+  );
+
+  ui.btnSave.addEventListener(
+    'click',
+    saveRecord
+  );
+
+  ui.chartRange.addEventListener(
+    'change',
+    loadTrendsViewData
+  );
+
+  async function initApp() {
+
+    state.todayDateStr =
+      getLocalISODate(new Date());
+
+    state.currentRecordDate =
+      state.todayDateStr;
+
+    switchView('input');
+
+    updateDisciplineVisual();
+  }
+
+  window.addEventListener(
+    'DOMContentLoaded',
+    initApp
+  );
+</script>
+</body>
+</html>
