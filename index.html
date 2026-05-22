@@ -174,6 +174,22 @@
       white-space: nowrap;
     }
 
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 9999px;
+      background: rgba(148,163,184,.22);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width .25s ease;
+    }
+
     .toast {
       position: fixed;
       left: 50%;
@@ -210,6 +226,10 @@
         <button id="btn-export" title="导出数据为 JSON" class="p-2 w-11 h-11 rounded-full flex items-center justify-center border transition-colors" style="border-color: var(--border-color); background-color: rgba(122,167,255,.10); color: var(--primary);">
           <i class="ph ph-export text-xl"></i>
         </button>
+        <button id="btn-import" title="导入 JSON 或 CSV" class="p-2 w-11 h-11 rounded-full flex items-center justify-center border transition-colors" style="border-color: var(--border-color); background-color: rgba(245,158,11,.10); color: var(--warning);">
+          <i class="ph ph-upload-simple text-xl"></i>
+        </button>
+        <input id="import-file-input" type="file" class="hidden" accept=".json,.csv,application/json,text/csv" />
       </div>
     </header>
 
@@ -220,6 +240,28 @@
           <p id="current-date-display" class="text-sm mt-1"></p>
         </div>
         <input id="record-date-input" type="date" class="bg-transparent border rounded-xl px-3 py-2 text-sm" style="border-color: var(--border-color); color: var(--text-main);" />
+      </div>
+    </section>
+
+    <section class="card p-5 mb-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">目标闭环</h2>
+        <span id="goal-status-chip" class="chip">未设置</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label id="target-weight-label" class="text-xs mb-1 block" style="color: var(--text-muted);">目标体重</label>
+          <input type="number" id="target-weight-input" step="0.1" class="w-full bg-transparent border rounded-xl px-3 py-2 text-lg font-bold focus:outline-none" style="border-color: var(--border-color); color: var(--text-main);" placeholder="例如: 65.0" />
+        </div>
+        <div>
+          <label class="text-xs mb-1 block" style="color: var(--text-muted);">目标日期</label>
+          <input type="date" id="target-date-input" class="w-full bg-transparent border rounded-xl px-3 py-2 text-sm focus:outline-none" style="border-color: var(--border-color); color: var(--text-main);" />
+        </div>
+      </div>
+
+      <div class="p-3 rounded-xl border text-xs leading-relaxed" style="border-color: var(--border-color); background: rgba(255,255,255,0.02); color: var(--text-muted);">
+        <div id="goal-summary">设置目标体重和日期后，会自动计算每周建议变化速度。</div>
       </div>
     </section>
 
@@ -335,6 +377,33 @@
     </header>
 
     <section class="card p-4 mb-5">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <div>
+          <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">目标进度</h2>
+          <p id="target-progress-desc" class="text-xs mt-1" style="color: var(--text-muted);">设置目标后显示进度</p>
+        </div>
+        <span id="target-progress-value" class="text-xl font-bold">--%</span>
+      </div>
+      <div class="progress-track mb-3">
+        <div id="target-progress-bar" class="progress-fill"></div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 text-xs">
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">剩余</p>
+          <p id="stat-goal-remaining" class="text-base font-bold mt-1">--.- kg</p>
+        </div>
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">建议速度</p>
+          <p id="stat-goal-weekly" class="text-base font-bold mt-1">--/周</p>
+        </div>
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">剩余天数</p>
+          <p id="stat-goal-days" class="text-base font-bold mt-1">-- 天</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card p-4 mb-5">
       <div class="grid grid-cols-3 gap-3">
         <div class="metric-badge flex flex-col justify-between">
           <p class="text-[11px] font-semibold uppercase" style="color: var(--text-muted);">起始数据</p>
@@ -366,6 +435,14 @@
         <div class="metric-badge">
           <p style="color: var(--text-muted);">近7日纪律</p>
           <p id="stat-discipline" class="text-lg font-bold mt-1">--/--</p>
+        </div>
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">连续打卡</p>
+          <p id="stat-streak" class="text-lg font-bold mt-1">0 天</p>
+        </div>
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">近7日缺失</p>
+          <p id="stat-missing" class="text-lg font-bold mt-1">0 天</p>
         </div>
       </div>
     </section>
@@ -399,6 +476,17 @@
       </div>
     </section>
 
+    <section class="card p-4 mb-5 relative">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">腰围趋势</h2>
+        <span id="waist-chart-tip" class="text-xs" style="color: var(--text-muted);">选填数据</span>
+      </div>
+
+      <div class="w-full h-52 relative">
+        <canvas id="waistChart"></canvas>
+      </div>
+    </section>
+
     <section class="card p-5 mb-5 border-l-4" id="rule-alert" style="border-left-color: var(--primary);">
       <div class="flex items-start gap-3">
         <div id="rule-icon" class="mt-0.5">
@@ -413,6 +501,23 @@
     </section>
 
     <section class="card p-5 mb-5">
+      <div class="mb-5">
+        <h2 class="text-sm font-semibold uppercase tracking-wider mb-3" style="color: var(--text-muted);">数据备份</h2>
+        <div class="grid grid-cols-3 gap-2">
+          <button id="btn-export-json" class="h-10 px-3 rounded-xl border flex items-center justify-center gap-1 text-xs font-medium" style="border-color: var(--border-color); color: var(--text-main); background: rgba(255,255,255,.03);">
+            <i class="ph ph-file-json text-lg"></i>
+            JSON
+          </button>
+          <button id="btn-export-csv" class="h-10 px-3 rounded-xl border flex items-center justify-center gap-1 text-xs font-medium" style="border-color: var(--border-color); color: var(--text-main); background: rgba(255,255,255,.03);">
+            <i class="ph ph-table text-lg"></i>
+            CSV
+          </button>
+          <button id="btn-import-data" class="h-10 px-3 rounded-xl border flex items-center justify-center gap-1 text-xs font-medium" style="border-color: var(--border-color); color: var(--text-main); background: rgba(255,255,255,.03);">
+            <i class="ph ph-upload-simple text-lg"></i>
+            导入
+          </button>
+        </div>
+      </div>
       <div class="flex items-center justify-between gap-3 mb-3">
         <div>
           <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">历史记录</h2>
@@ -452,6 +557,7 @@
 
   const state = {
     chartInstance: null,
+    waistChartInstance: null,
     todayDateStr: getLocalISODate(new Date()),
     currentRecordDate: getLocalISODate(new Date()),
     currentTimeSeries: [],
@@ -459,7 +565,8 @@
     draft: { weight: 70.0, workout: false, diet: false, waist: null, note: '' },
     lastSavedRecordDate: null,
     unit: localStorage.getItem('app_unit') || 'kg',
-    height: localStorage.getItem('app_user_height') ? parseFloat(localStorage.getItem('app_user_height')) : null
+    height: localStorage.getItem('app_user_height') ? parseFloat(localStorage.getItem('app_user_height')) : null,
+    goal: loadStoredGoal()
   };
 
   const ui = {
@@ -479,8 +586,24 @@
     trendIndicator: document.getElementById('weight-trend-indicator'),
     chartRange: document.getElementById('chart-range'),
     btnExport: document.getElementById('btn-export'),
+    btnImport: document.getElementById('btn-import'),
+    importFileInput: document.getElementById('import-file-input'),
+    btnExportJson: document.getElementById('btn-export-json'),
+    btnExportCsv: document.getElementById('btn-export-csv'),
+    btnImportData: document.getElementById('btn-import-data'),
     btnUnitToggle: document.getElementById('btn-unit-toggle'),
     btnBackfill: document.getElementById('btn-backfill'),
+    targetWeightInput: document.getElementById('target-weight-input'),
+    targetDateInput: document.getElementById('target-date-input'),
+    targetWeightLabel: document.getElementById('target-weight-label'),
+    goalStatusChip: document.getElementById('goal-status-chip'),
+    goalSummary: document.getElementById('goal-summary'),
+    targetProgressDesc: document.getElementById('target-progress-desc'),
+    targetProgressValue: document.getElementById('target-progress-value'),
+    targetProgressBar: document.getElementById('target-progress-bar'),
+    statGoalRemaining: document.getElementById('stat-goal-remaining'),
+    statGoalWeekly: document.getElementById('stat-goal-weekly'),
+    statGoalDays: document.getElementById('stat-goal-days'),
     btnWorkout: document.getElementById('btn-workout'),
     btnDiet: document.getElementById('btn-diet'),
     disciplineScore: document.getElementById('discipline-score'),
@@ -497,6 +620,10 @@
     statTotalChange: document.getElementById('stat-total-change'),
     statMa7: document.getElementById('stat-ma7'),
     statDiscipline: document.getElementById('stat-discipline'),
+    statStreak: document.getElementById('stat-streak'),
+    statMissing: document.getElementById('stat-missing'),
+    waistChart: document.getElementById('waistChart'),
+    waistChartTip: document.getElementById('waist-chart-tip'),
     ruleAlert: document.getElementById('rule-alert'),
     ruleTitle: document.getElementById('rule-title'),
     ruleDesc: document.getElementById('rule-desc'),
@@ -526,6 +653,148 @@
     return state.unit === 'jin' ? '斤' : 'kg';
   }
 
+  function loadStoredGoal() {
+    const raw = localStorage.getItem('app_weight_goal');
+    if (!raw) return { targetWeightKg: null, targetDate: '', weeklyRateKg: null };
+    try {
+      const parsed = JSON.parse(raw);
+      return {
+        targetWeightKg: Number.isFinite(parsed.targetWeightKg) ? parsed.targetWeightKg : null,
+        targetDate: typeof parsed.targetDate === 'string' ? parsed.targetDate : '',
+        weeklyRateKg: Number.isFinite(parsed.weeklyRateKg) ? parsed.weeklyRateKg : null
+      };
+    } catch {
+      return { targetWeightKg: null, targetDate: '', weeklyRateKg: null };
+    }
+  }
+
+  function saveGoal() {
+    localStorage.setItem('app_weight_goal', JSON.stringify(state.goal));
+  }
+
+  function renderGoalInputs() {
+    ui.targetWeightLabel.textContent = `目标体重 (${getUnitLabel()})`;
+    ui.targetWeightInput.placeholder = getUnitLabel() === '斤' ? '例如: 130.0' : '例如: 65.0';
+    ui.targetWeightInput.value = state.goal.targetWeightKg != null
+      ? getDisplayWeight(state.goal.targetWeightKg).toFixed(1)
+      : '';
+    ui.targetDateInput.value = state.goal.targetDate || '';
+  }
+
+  function updateGoalFromInputs() {
+    const weightVal = parseFloat(ui.targetWeightInput.value);
+    state.goal.targetWeightKg = Number.isNaN(weightVal) ? null : getStoreWeight(weightVal);
+    state.goal.targetDate = ui.targetDateInput.value || '';
+    state.goal.weeklyRateKg = computeWeeklyTargetRate();
+    saveGoal();
+    renderGoalUI(null, getLatestActualWeight());
+    refreshInsights();
+  }
+
+  function computeWeeklyTargetRate() {
+    if (state.goal.targetWeightKg == null || !state.goal.targetDate) return null;
+    const latest = getLatestActualWeight();
+    if (latest == null) return null;
+    const targetDate = new Date(state.goal.targetDate);
+    const days = Math.ceil((targetDate.getTime() - new Date(state.todayDateStr).getTime()) / 86400000);
+    if (!Number.isFinite(days) || days <= 0) return null;
+    const weekly = ((state.goal.targetWeightKg - latest) / days) * 7;
+    return Number(weekly.toFixed(2));
+  }
+
+  function getLatestActualWeight() {
+    const latest = [...state.currentTimeSeries].reverse().find(x => x.actualRecord);
+    return latest?.weight ?? state.draft.weight ?? null;
+  }
+
+  function getWaistRecords(records) {
+    return records
+      .filter(r => r.waist != null)
+      .map(r => ({ date: r.date, waist: Number(r.waist), record: r }));
+  }
+
+  function computeStreak(records) {
+    const dateSet = new Set(records.map(r => r.date));
+    let streak = 0;
+    let cursor = new Date(state.todayDateStr);
+    while (dateSet.has(getLocalISODate(cursor))) {
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function computeMissingDays(records, days = 7) {
+    const dateSet = new Set(records.map(r => r.date));
+    let missing = 0;
+    const cursor = new Date(state.todayDateStr);
+    for (let i = 0; i < days; i += 1) {
+      const dateStr = getLocalISODate(cursor);
+      if (!dateSet.has(dateStr)) missing += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return missing;
+  }
+
+  function formatWeekRate(rateKg) {
+    if (rateKg == null || Number.isNaN(rateKg)) return '--/周';
+    const sign = rateKg > 0 ? '+' : '';
+    return `${sign}${getDisplayWeight(rateKg).toFixed(2)} ${getUnitLabel()}/周`;
+  }
+
+  function renderGoalUI(analysis, latestActualWeight) {
+    const goal = state.goal;
+    const hasGoal = goal.targetWeightKg != null && goal.targetDate;
+
+    if (!hasGoal) {
+      ui.goalStatusChip.textContent = '未设置';
+      ui.goalSummary.textContent = '设置目标体重和日期后，会自动计算每周建议变化速度。';
+      ui.targetProgressDesc.textContent = '设置目标后显示进度';
+      ui.targetProgressValue.textContent = '--%';
+      ui.targetProgressBar.style.width = '0%';
+      ui.statGoalRemaining.textContent = '--.- kg';
+      ui.statGoalWeekly.textContent = '--/周';
+      ui.statGoalDays.textContent = '-- 天';
+      return;
+    }
+
+    const targetWeightDisplay = getDisplayWeight(goal.targetWeightKg);
+    const latestDisplay = latestActualWeight != null ? getDisplayWeight(latestActualWeight) : null;
+    const targetDate = new Date(goal.targetDate);
+    const daysLeft = Math.ceil((targetDate.getTime() - new Date(state.todayDateStr).getTime()) / 86400000);
+    const deltaKg = latestActualWeight != null ? latestActualWeight - goal.targetWeightKg : null;
+    const weekly = computeWeeklyTargetRate();
+    const startWeightKg = analysis?.start || latestActualWeight || goal.targetWeightKg;
+    const totalNeededKg = startWeightKg - goal.targetWeightKg;
+    const completedKg = startWeightKg - (latestActualWeight ?? startWeightKg);
+    const progressPercent = latestActualWeight != null && targetWeightDisplay != null
+      ? Math.max(0, Math.min(100, (completedKg / (totalNeededKg || 0.001)) * 100))
+      : 0;
+    const remaining = latestActualWeight != null ? Math.abs(deltaKg) : null;
+    const direction = latestActualWeight != null && goal.targetWeightKg != null
+      ? (Math.abs(latestActualWeight - goal.targetWeightKg) < 0.05 ? '达成' : latestActualWeight > goal.targetWeightKg ? '减重' : '增重')
+      : '调整';
+
+    ui.goalStatusChip.textContent = `目标${direction}`;
+    ui.goalSummary.textContent = `当前 ${latestDisplay?.toFixed(1) || '--.-'} ${getUnitLabel()}，目标 ${targetWeightDisplay.toFixed(1)} ${getUnitLabel()}，${goal.targetDate} 前完成。`;
+    ui.targetProgressDesc.textContent = daysLeft >= 0 ? `距离目标还有 ${daysLeft} 天` : '目标日期已过';
+    ui.targetProgressValue.textContent = `${progressPercent.toFixed(0)}%`;
+    ui.targetProgressBar.style.width = `${progressPercent}%`;
+    ui.statGoalRemaining.textContent = remaining != null ? `${getDisplayWeight(remaining).toFixed(1)} ${getUnitLabel()}` : '--.- kg';
+    ui.statGoalWeekly.textContent = formatWeekRate(weekly);
+    ui.statGoalDays.textContent = Number.isFinite(daysLeft) ? `${daysLeft} 天` : '-- 天';
+
+    if (weekly != null) {
+      ui.goalSummary.textContent += ` 建议每周变化 ${formatWeekRate(weekly)}。`;
+    }
+  }
+
+  function refreshGoalUI() {
+    state.goal.weeklyRateKg = computeWeeklyTargetRate();
+    renderGoalInputs();
+    renderGoalUI(null, getLatestActualWeight());
+  }
+
   // 绑定单位切换事件
   ui.btnUnitToggle.addEventListener('click', () => {
     state.unit = state.unit === 'kg' ? 'jin' : 'kg';
@@ -534,6 +803,7 @@
 
     // 修改输入区域的标题
     ui.weightTitle.textContent = `体重 (${getUnitLabel()})`;
+    renderGoalInputs();
 
     // 根据当前所在视图刷新数据
     if (!ui.inputView.classList.contains('view-hidden')) {
@@ -596,7 +866,39 @@
       .replace(/'/g, '&#039;');
   }
 
-  async function exportAllRecords() {
+  function downloadTextFile(filename, content, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function csvCell(value) {
+    if (value == null) return '';
+    const text = String(value);
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  function recordsToCSV(records) {
+    const headers = ['date', 'weight_kg', 'waist_cm', 'workout', 'diet', 'note', 'timestamp'];
+    const rows = records.map(record => [
+      record.date,
+      record.weight,
+      record.waist ?? '',
+      record.workout ? 1 : 0,
+      record.diet ? 1 : 0,
+      record.note ?? '',
+      record.timestamp ?? ''
+    ].map(csvCell).join(','));
+    return [headers.join(','), ...rows].join('\n');
+  }
+
+  async function exportAllRecords(format = 'json') {
     try {
       const records = await db.records.orderBy('date').toArray();
 
@@ -605,33 +907,148 @@
         return;
       }
 
+      if (format === 'csv') {
+        downloadTextFile(
+          `weight-tracking-export-${state.todayDateStr}.csv`,
+          recordsToCSV(records),
+          'text/csv;charset=utf-8'
+        );
+        showToast(`已导出 ${records.length} 条 CSV`, 'success');
+        return;
+      }
+
       const payload = {
         app: 'weight-tracking',
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
         unit: state.unit,
+        height: state.height,
+        goal: state.goal,
         count: records.length,
         records
       };
 
-      const blob = new Blob(
-        [JSON.stringify(payload, null, 2)],
-        { type: 'application/json;charset=utf-8' }
+      downloadTextFile(
+        `weight-tracking-export-${state.todayDateStr}.json`,
+        JSON.stringify(payload, null, 2),
+        'application/json;charset=utf-8'
       );
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `weight-tracking-export-${state.todayDateStr}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
       showToast(`已导出 ${records.length} 条记录`, 'success');
     } catch (error) {
       console.error(error);
       showToast('导出失败', 'warning');
+    }
+  }
+
+  function parseCSV(text) {
+    const rows = [];
+    let current = '';
+    let row = [];
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i += 1) {
+      const char = text[i];
+      const next = text[i + 1];
+
+      if (char === '"' && inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        row.push(current);
+        current = '';
+      } else if ((char === '\n' || char === '\r') && !inQuotes) {
+        if (char === '\r' && next === '\n') i += 1;
+        row.push(current);
+        if (row.some(cell => cell.trim() !== '')) rows.push(row);
+        row = [];
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    row.push(current);
+    if (row.some(cell => cell.trim() !== '')) rows.push(row);
+
+    if (rows.length < 2) return [];
+    const headers = rows[0].map(h => h.trim());
+    return rows.slice(1).map(rowData => {
+      const item = {};
+      headers.forEach((header, idx) => {
+        item[header] = rowData[idx] ?? '';
+      });
+      return item;
+    });
+  }
+
+  function normalizeImportRecord(record) {
+    const date = record.date;
+    const weight = parseFloat(record.weight ?? record.weight_kg);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(weight) || weight <= 0) {
+      return null;
+    }
+
+    const waist = parseFloat(record.waist ?? record.waist_cm);
+    const timestamp = parseInt(record.timestamp, 10);
+
+    return {
+      date,
+      weight,
+      waist: Number.isFinite(waist) ? waist : null,
+      workout: record.workout === true || record.workout === 'true' || record.workout === '1' || record.workout === 1,
+      diet: record.diet === true || record.diet === 'true' || record.diet === '1' || record.diet === 1,
+      note: record.note || '',
+      timestamp: Number.isFinite(timestamp) ? timestamp : Date.now()
+    };
+  }
+
+  async function importDataFile(file) {
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const isJson = file.name.toLowerCase().endsWith('.json') || text.trim().startsWith('{') || text.trim().startsWith('[');
+      const payload = isJson ? JSON.parse(text) : parseCSV(text);
+      const rawRecords = Array.isArray(payload) ? payload : payload.records;
+      const records = (rawRecords || []).map(normalizeImportRecord).filter(Boolean);
+
+      if (records.length === 0) {
+        showToast('未找到可导入的记录', 'warning');
+        return;
+      }
+
+      await db.records.bulkPut(records);
+
+      if (!Array.isArray(payload) && payload.goal) {
+        state.goal = {
+          targetWeightKg: Number.isFinite(payload.goal.targetWeightKg) ? payload.goal.targetWeightKg : state.goal.targetWeightKg,
+          targetDate: typeof payload.goal.targetDate === 'string' ? payload.goal.targetDate : state.goal.targetDate,
+          weeklyRateKg: Number.isFinite(payload.goal.weeklyRateKg) ? payload.goal.weeklyRateKg : state.goal.weeklyRateKg
+        };
+        saveGoal();
+      }
+
+      if (!Array.isArray(payload) && Number.isFinite(payload.height)) {
+        state.height = payload.height;
+        localStorage.setItem('app_user_height', payload.height);
+      }
+
+      showToast(`已导入 ${records.length} 条记录`, 'success');
+
+      if (!ui.inputView.classList.contains('view-hidden')) {
+        await loadInputViewData();
+      }
+
+      if (!ui.trendsView.classList.contains('view-hidden')) {
+        await loadTrendsViewData();
+      }
+    } catch (error) {
+      console.error(error);
+      showToast('导入失败，请检查文件格式', 'warning');
+    } finally {
+      ui.importFileInput.value = '';
     }
   }
 
@@ -825,6 +1242,7 @@
     ui.dateDisplay.textContent = formatDateLabel(state.currentRecordDate);
     ui.recordDateInput.value = state.currentRecordDate;
     ui.recordDateInput.max = state.todayDateStr;
+    renderGoalInputs();
 
     if (state.height) {
       ui.heightInput.value = state.height;
@@ -961,6 +1379,7 @@
       }, 1800);
 
       refreshInsights();
+      refreshGoalUI();
 
       if (!ui.trendsView.classList.contains('view-hidden')) {
         loadTrendsViewData();
@@ -1360,6 +1779,85 @@
     });
   }
 
+  function renderWaistChart(records) {
+    const waistRecords = getWaistRecords(records).sort((a, b) => new Date(a.date) - new Date(b.date));
+    const ctx = ui.waistChart.getContext('2d');
+    if (state.waistChartInstance) state.waistChartInstance.destroy();
+
+    if (waistRecords.length === 0) {
+      ui.waistChartTip.textContent = '暂无腰围数据';
+      return;
+    }
+
+    const style = getComputedStyle(document.body);
+    const warningColor = style.getPropertyValue('--warning').trim();
+    const mutedColor = style.getPropertyValue('--text-muted').trim();
+    const gridColor = style.getPropertyValue('--border-color').trim();
+    const values = waistRecords.map(item => item.waist);
+    const minWaist = Math.min(...values);
+    const maxWaist = Math.max(...values);
+    ui.waistChartTip.textContent = `${waistRecords.length} 条记录`;
+
+    state.waistChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: waistRecords.map(item => item.date.substring(5)),
+        datasets: [{
+          label: '腰围',
+          data: values,
+          borderColor: warningColor,
+          backgroundColor: 'rgba(245,158,11,0.10)',
+          fill: true,
+          borderWidth: 2.5,
+          pointRadius: 3,
+          tension: 0.35
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: mutedColor, maxTicksLimit: 6 } },
+          y: {
+            min: Math.floor(minWaist - 1),
+            max: Math.ceil(maxWaist + 1),
+            grid: { color: gridColor },
+            ticks: { color: mutedColor }
+          }
+        }
+      }
+    });
+  }
+
+  function updateAdherenceStats(records) {
+    ui.statStreak.textContent = `${computeStreak(records)} 天`;
+    ui.statMissing.textContent = `${computeMissingDays(records, 7)} 天`;
+  }
+
+  function addGoalContextToAnalysis(analysis, latestWeight) {
+    if (state.goal.targetWeightKg == null || !state.goal.targetDate || latestWeight == null) {
+      return analysis;
+    }
+
+    const remaining = Math.abs(latestWeight - state.goal.targetWeightKg);
+    const weekly = computeWeeklyTargetRate();
+    const targetText = `${getDisplayWeight(state.goal.targetWeightKg).toFixed(1)} ${getUnitLabel()}`;
+    const remainingText = `${getDisplayWeight(remaining).toFixed(1)} ${getUnitLabel()}`;
+    const goalDesc = `目标 ${targetText}，剩余 ${remainingText}。`;
+
+    return {
+      ...analysis,
+      desc: `${analysis.desc} ${goalDesc}`,
+      meta: [
+        ...analysis.meta,
+        `目标 ${targetText}`,
+        `建议 ${formatWeekRate(weekly)}`
+      ]
+    };
+  }
+
   async function loadTrendsViewData() {
 
     const daysToFetch =
@@ -1380,6 +1878,11 @@
         await db.records
           .where('date')
           .aboveOrEqual(startDateStr)
+          .toArray();
+
+      const allRecords =
+        await db.records
+          .orderBy('date')
           .toArray();
 
       let timeSeries =
@@ -1409,7 +1912,9 @@
       state.currentTimeSeries = timeSeries;
       state.currentMa7Data = ma7Data;
 
-      const analysis = analyzeSeries(timeSeries, ma7Data, ma21Data);
+      const rawAnalysis = analyzeSeries(timeSeries, ma7Data, ma21Data);
+      const latestActualRecord = [...timeSeries].reverse().find(item => item.actualRecord);
+      const analysis = addGoalContextToAnalysis(rawAnalysis, latestActualRecord?.weight ?? null);
 
       const displayRawWeights = rawWeights.map(w => getDisplayWeight(w));
       const displayActualWeights = actualWeights.map(w => getDisplayWeight(w));
@@ -1430,6 +1935,9 @@
         analysis
       );
 
+      renderGoalUI(analysis, latestActualRecord?.weight ?? null);
+      updateAdherenceStats(allRecords);
+      renderWaistChart(records);
       setDiagnosticUI(analysis);
       await refreshHistoryList();
 
@@ -1503,7 +2011,32 @@
 
   ui.btnExport.addEventListener(
     'click',
-    exportAllRecords
+    () => exportAllRecords('json')
+  );
+
+  ui.btnImport.addEventListener(
+    'click',
+    () => ui.importFileInput.click()
+  );
+
+  ui.btnExportJson.addEventListener(
+    'click',
+    () => exportAllRecords('json')
+  );
+
+  ui.btnExportCsv.addEventListener(
+    'click',
+    () => exportAllRecords('csv')
+  );
+
+  ui.btnImportData.addEventListener(
+    'click',
+    () => ui.importFileInput.click()
+  );
+
+  ui.importFileInput.addEventListener(
+    'change',
+    e => importDataFile(e.target.files?.[0])
   );
 
   ui.btnBackfill.addEventListener(
@@ -1568,6 +2101,9 @@
     loadInputViewData();
   });
 
+  ui.targetWeightInput.addEventListener('input', updateGoalFromInputs);
+  ui.targetDateInput.addEventListener('change', updateGoalFromInputs);
+
   ui.historyList.addEventListener('click', e => {
     const editTarget = e.target.closest('[data-history-edit]');
     const deleteTarget = e.target.closest('[data-history-delete]');
@@ -1598,6 +2134,8 @@
     ui.weightTitle.textContent = `体重 (${getUnitLabel()})`;
     ui.recordDateInput.max = state.todayDateStr;
     ui.recordDateInput.value = state.currentRecordDate;
+    ui.targetDateInput.min = state.todayDateStr;
+    renderGoalInputs();
 
     switchView('input');
 
