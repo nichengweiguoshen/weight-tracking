@@ -174,6 +174,21 @@
       white-space: nowrap;
     }
 
+    .factor-btn {
+      border: 1px solid var(--border-color);
+      border-radius: 9999px;
+      padding: 8px 11px;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(255,255,255,.02);
+      transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+    }
+    .factor-btn.active {
+      border-color: rgba(122,167,255,.62);
+      color: var(--primary);
+      background: rgba(122,167,255,.12);
+    }
+
     .progress-track {
       width: 100%;
       height: 10px;
@@ -328,6 +343,17 @@
         <div class="chip text-center" id="workout-chip">训练：未执行</div>
         <div class="chip text-center" id="diet-chip">饮食：未执行</div>
       </div>
+
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="text-xs mb-1 block" style="color: var(--text-muted);">训练时长 (分钟)</label>
+          <input type="number" id="workout-minutes-input" min="0" step="5" class="w-full bg-transparent border rounded-xl px-3 py-2 text-lg font-bold focus:outline-none" style="border-color: var(--border-color); color: var(--text-main);" placeholder="例如: 45" />
+        </div>
+        <div>
+          <label class="text-xs mb-1 block" style="color: var(--text-muted);">热量偏差 (kcal)</label>
+          <input type="number" id="calorie-delta-input" step="50" class="w-full bg-transparent border rounded-xl px-3 py-2 text-lg font-bold focus:outline-none" style="border-color: var(--border-color); color: var(--text-main);" placeholder="例如: -300" />
+        </div>
+      </div>
     </section>
 
     <section class="card p-5 mb-5">
@@ -344,12 +370,34 @@
         </div>
       </div>
 
+      <div class="mb-4">
+        <label class="text-xs mb-1 block" style="color: var(--text-muted);">睡眠时长 (小时) - 选填</label>
+        <input type="number" id="sleep-hours-input" step="0.5" min="0" max="24" class="w-full bg-transparent border rounded-xl px-3 py-2 text-lg font-bold focus:outline-none" style="border-color: var(--border-color); color: var(--text-main);" placeholder="例如: 7.5" />
+      </div>
+
       <div class="flex items-center justify-between p-3 rounded-xl border" style="border-color: var(--border-color); background: rgba(255,255,255,0.02);">
         <span class="text-sm font-medium" style="color: var(--text-muted);">今日 BMI 指数</span>
         <div class="text-right flex items-center gap-2">
           <span id="bmi-display" class="text-xl font-bold">--.-</span>
           <span id="bmi-label" class="chip" style="font-size: 10px;">待计算</span>
         </div>
+      </div>
+    </section>
+
+    <section class="card p-5 mb-5">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">波动原因标签</h2>
+        <span id="factor-count" class="chip">0 项</span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="factor-btn" data-factor="highCarb">高碳水</button>
+        <button type="button" class="factor-btn" data-factor="highSalt">高盐</button>
+        <button type="button" class="factor-btn" data-factor="alcohol">饮酒</button>
+        <button type="button" class="factor-btn" data-factor="poorSleep">睡眠差</button>
+        <button type="button" class="factor-btn" data-factor="hardTraining">高强度训练</button>
+        <button type="button" class="factor-btn" data-factor="travel">出差/外食</button>
+        <button type="button" class="factor-btn" data-factor="cycle">生理周期</button>
+        <button type="button" class="factor-btn" data-factor="stress">压力大</button>
       </div>
     </section>
 
@@ -501,6 +549,40 @@
     </section>
 
     <section class="card p-5 mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">近 7 日周报</h2>
+        <span id="weekly-report-period" class="chip">--</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-xs mb-4">
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">均重变化</p>
+          <p id="weekly-weight-change" class="text-lg font-bold mt-1">--.- kg</p>
+        </div>
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">腰围变化</p>
+          <p id="weekly-waist-change" class="text-lg font-bold mt-1">--.- cm</p>
+        </div>
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">训练总量</p>
+          <p id="weekly-workout-minutes" class="text-lg font-bold mt-1">0 分钟</p>
+        </div>
+        <div class="metric-badge">
+          <p style="color: var(--text-muted);">平均睡眠</p>
+          <p id="weekly-sleep-average" class="text-lg font-bold mt-1">-- 小时</p>
+        </div>
+      </div>
+      <div id="weekly-summary" class="text-xs leading-relaxed" style="color: var(--text-muted);">记录满 7 天后会生成更稳定的周报。</div>
+    </section>
+
+    <section class="card p-5 mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">风险与解释</h2>
+        <span id="risk-count" class="chip">0 项</span>
+      </div>
+      <div id="risk-list" class="space-y-2 text-xs"></div>
+    </section>
+
+    <section class="card p-5 mb-5">
       <div class="mb-5">
         <h2 class="text-sm font-semibold uppercase tracking-wider mb-3" style="color: var(--text-muted);">数据备份</h2>
         <div class="grid grid-cols-3 gap-2">
@@ -562,7 +644,17 @@
     currentRecordDate: getLocalISODate(new Date()),
     currentTimeSeries: [],
     currentMa7Data: [],
-    draft: { weight: 70.0, workout: false, diet: false, waist: null, note: '' },
+    draft: {
+      weight: 70.0,
+      workout: false,
+      diet: false,
+      waist: null,
+      note: '',
+      workoutMinutes: null,
+      calorieDelta: null,
+      sleepHours: null,
+      factors: []
+    },
     lastSavedRecordDate: null,
     unit: localStorage.getItem('app_unit') || 'kg',
     height: localStorage.getItem('app_user_height') ? parseFloat(localStorage.getItem('app_user_height')) : null,
@@ -606,6 +698,11 @@
     statGoalDays: document.getElementById('stat-goal-days'),
     btnWorkout: document.getElementById('btn-workout'),
     btnDiet: document.getElementById('btn-diet'),
+    workoutMinutesInput: document.getElementById('workout-minutes-input'),
+    calorieDeltaInput: document.getElementById('calorie-delta-input'),
+    sleepHoursInput: document.getElementById('sleep-hours-input'),
+    factorButtons: document.querySelectorAll('.factor-btn'),
+    factorCount: document.getElementById('factor-count'),
     disciplineScore: document.getElementById('discipline-score'),
     workoutChip: document.getElementById('workout-chip'),
     dietChip: document.getElementById('diet-chip'),
@@ -629,6 +726,14 @@
     ruleDesc: document.getElementById('rule-desc'),
     ruleIcon: document.getElementById('rule-icon'),
     ruleMeta: document.getElementById('rule-meta'),
+    weeklyReportPeriod: document.getElementById('weekly-report-period'),
+    weeklyWeightChange: document.getElementById('weekly-weight-change'),
+    weeklyWaistChange: document.getElementById('weekly-waist-change'),
+    weeklyWorkoutMinutes: document.getElementById('weekly-workout-minutes'),
+    weeklySleepAverage: document.getElementById('weekly-sleep-average'),
+    weeklySummary: document.getElementById('weekly-summary'),
+    riskCount: document.getElementById('risk-count'),
+    riskList: document.getElementById('risk-list'),
     historyCount: document.getElementById('history-count'),
     historyList: document.getElementById('history-list'),
     toast: document.getElementById('toast'),
@@ -740,6 +845,35 @@
     if (rateKg == null || Number.isNaN(rateKg)) return '--/周';
     const sign = rateKg > 0 ? '+' : '';
     return `${sign}${getDisplayWeight(rateKg).toFixed(2)} ${getUnitLabel()}/周`;
+  }
+
+  const factorLabels = {
+    highCarb: '高碳水',
+    highSalt: '高盐',
+    alcohol: '饮酒',
+    poorSleep: '睡眠差',
+    hardTraining: '高强度训练',
+    travel: '出差/外食',
+    cycle: '生理周期',
+    stress: '压力大'
+  };
+
+  function parseOptionalNumber(value, min = null, max = null) {
+    const parsed = parseFloat(value);
+    if (!Number.isFinite(parsed)) return null;
+    if (min != null && parsed < min) return min;
+    if (max != null && parsed > max) return max;
+    return parsed;
+  }
+
+  function normalizeFactors(value) {
+    if (!Array.isArray(value)) return [];
+    return [...new Set(value.filter(key => factorLabels[key]))];
+  }
+
+  function formatFactorLabels(factors) {
+    const labels = normalizeFactors(factors).map(key => factorLabels[key]);
+    return labels.length > 0 ? labels.join('、') : '无标签';
   }
 
   function renderGoalUI(analysis, latestActualWeight) {
@@ -885,13 +1019,29 @@
   }
 
   function recordsToCSV(records) {
-    const headers = ['date', 'weight_kg', 'waist_cm', 'workout', 'diet', 'note', 'timestamp'];
+    const headers = [
+      'date',
+      'weight_kg',
+      'waist_cm',
+      'workout',
+      'diet',
+      'workout_minutes',
+      'calorie_delta',
+      'sleep_hours',
+      'factors',
+      'note',
+      'timestamp'
+    ];
     const rows = records.map(record => [
       record.date,
       record.weight,
       record.waist ?? '',
       record.workout ? 1 : 0,
       record.diet ? 1 : 0,
+      record.workoutMinutes ?? '',
+      record.calorieDelta ?? '',
+      record.sleepHours ?? '',
+      normalizeFactors(record.factors).join('|'),
       record.note ?? '',
       record.timestamp ?? ''
     ].map(csvCell).join(','));
@@ -999,6 +1149,14 @@
       waist: Number.isFinite(waist) ? waist : null,
       workout: record.workout === true || record.workout === 'true' || record.workout === '1' || record.workout === 1,
       diet: record.diet === true || record.diet === 'true' || record.diet === '1' || record.diet === 1,
+      workoutMinutes: parseOptionalNumber(record.workoutMinutes ?? record.workout_minutes, 0),
+      calorieDelta: parseOptionalNumber(record.calorieDelta ?? record.calorie_delta),
+      sleepHours: parseOptionalNumber(record.sleepHours ?? record.sleep_hours, 0, 24),
+      factors: normalizeFactors(
+        Array.isArray(record.factors)
+          ? record.factors
+          : String(record.factors || '').split('|').map(item => item.trim()).filter(Boolean)
+      ),
       note: record.note || '',
       timestamp: Number.isFinite(timestamp) ? timestamp : Date.now()
     };
@@ -1069,10 +1227,16 @@
     ui.historyList.innerHTML = records.map(record => {
       const weightText = `${getDisplayWeight(record.weight)?.toFixed(1) || '--.-'} ${getUnitLabel()}`;
       const waistText = record.waist ? `腰围 ${Number(record.waist).toFixed(1)} cm` : '腰围未记录';
+      const detailText = [
+        record.workoutMinutes != null ? `训练 ${record.workoutMinutes} 分钟` : null,
+        record.calorieDelta != null ? `热量 ${record.calorieDelta > 0 ? '+' : ''}${record.calorieDelta} kcal` : null,
+        record.sleepHours != null ? `睡眠 ${record.sleepHours} 小时` : null
+      ].filter(Boolean).join(' · ');
       const disciplineText = [
         record.workout ? '训练已执行' : '训练未执行',
         record.diet ? '饮食已执行' : '饮食未执行'
       ].join(' · ');
+      const factorText = formatFactorLabels(record.factors);
       const noteText = record.note ? escapeHtml(record.note) : '未填写复盘';
 
       return `
@@ -1087,6 +1251,8 @@
                 <span class="font-bold text-base" style="color: var(--text-main);">${weightText}</span>
                 <span class="chip">${waistText}</span>
                 <span class="chip">${disciplineText}</span>
+                ${detailText ? `<span class="chip">${escapeHtml(detailText)}</span>` : ''}
+                <span class="chip">${escapeHtml(factorText)}</span>
               </div>
               <p class="history-note text-xs mt-2" style="color: var(--text-muted);" title="${noteText}">${noteText}</p>
             </button>
@@ -1192,10 +1358,16 @@
 
     const waistVal = parseFloat(ui.waistInput.value);
     state.draft.waist = Number.isNaN(waistVal) ? null : waistVal;
+    state.draft.workoutMinutes = parseOptionalNumber(ui.workoutMinutesInput.value, 0);
+    state.draft.calorieDelta = parseOptionalNumber(ui.calorieDeltaInput.value);
+    state.draft.sleepHours = parseOptionalNumber(ui.sleepHoursInput.value, 0, 24);
 
     state.draft.note = ui.noteInput.value.trim();
     state.draft.workout = ui.btnWorkout.classList.contains('active');
     state.draft.diet = ui.btnDiet.classList.contains('active');
+    state.draft.factors = [...ui.factorButtons]
+      .filter(btn => btn.classList.contains('active'))
+      .map(btn => btn.dataset.factor);
 
     syncDisciplineUI();
     renderDynamicBMI();
@@ -1217,6 +1389,10 @@
       diet ? '饮食：已执行' : '饮食：未执行';
 
     ui.disciplineScore.textContent = `当前 ${score}/2`;
+    ui.factorButtons.forEach(btn => {
+      btn.classList.toggle('active', normalizeFactors(state.draft.factors).includes(btn.dataset.factor));
+    });
+    ui.factorCount.textContent = `${normalizeFactors(state.draft.factors).length} 项`;
 
     ui.draftSyncTip.textContent =
       score > 0
@@ -1257,9 +1433,16 @@
         state.draft.diet = !!record.diet;
         state.draft.waist = record.waist || null;
         state.draft.note = record.note || '';
+        state.draft.workoutMinutes = record.workoutMinutes ?? null;
+        state.draft.calorieDelta = record.calorieDelta ?? null;
+        state.draft.sleepHours = record.sleepHours ?? null;
+        state.draft.factors = normalizeFactors(record.factors);
 
         ui.weightInput.value = getDisplayWeight(record.weight).toFixed(1);
         ui.waistInput.value = state.draft.waist !== null ? state.draft.waist : '';
+        ui.workoutMinutesInput.value = state.draft.workoutMinutes !== null ? state.draft.workoutMinutes : '';
+        ui.calorieDeltaInput.value = state.draft.calorieDelta !== null ? state.draft.calorieDelta : '';
+        ui.sleepHoursInput.value = state.draft.sleepHours !== null ? state.draft.sleepHours : '';
         ui.noteInput.value = state.draft.note;
 
         ui.btnSave.innerHTML = '<i class="ph ph-arrows-clockwise text-xl"></i> 更新记录';
@@ -1272,9 +1455,16 @@
         state.draft.diet = false;
         state.draft.waist = lastRecord?.waist || null;
         state.draft.note = '';
+        state.draft.workoutMinutes = null;
+        state.draft.calorieDelta = null;
+        state.draft.sleepHours = null;
+        state.draft.factors = [];
 
         ui.weightInput.value = getDisplayWeight(state.draft.weight).toFixed(1);
         ui.waistInput.value = state.draft.waist !== null ? state.draft.waist : '';
+        ui.workoutMinutesInput.value = '';
+        ui.calorieDeltaInput.value = '';
+        ui.sleepHoursInput.value = '';
         ui.noteInput.value = '';
 
         ui.btnSave.innerHTML = '<i class="ph ph-check-circle text-xl"></i> 保存记录';
@@ -1364,6 +1554,10 @@
       note: state.draft.note,
       workout: !!state.draft.workout,
       diet: !!state.draft.diet,
+      workoutMinutes: state.draft.workoutMinutes,
+      calorieDelta: state.draft.calorieDelta,
+      sleepHours: state.draft.sleepHours,
+      factors: normalizeFactors(state.draft.factors),
       timestamp: Date.now()
     };
 
@@ -1524,7 +1718,7 @@
     return merged;
   }
 
-  function analyzeSeries(timeSeries, ma7Data, ma21Data) {
+  function analyzeSeries(timeSeries, ma7Data, ma21Data, records = []) {
     const validWeights = timeSeries.filter(i => i.weight != null).map(i => i.weight);
 
     // 计算快线斜率 (近7天)
@@ -1556,6 +1750,24 @@
     const latest = validWeights.length > 0 ? validWeights[validWeights.length - 1] : 0;
     const start = validWeights.length > 0 ? validWeights[0] : 0;
     const totalChange = validWeights.length > 0 ? Number((latest - start).toFixed(1)) : 0;
+    const latestRecord = [...timeSeries].reverse().find(i => i.actualRecord)?.actualRecord || null;
+    const recentActual = timeSeries.filter(i => i.actualRecord).slice(-7).map(i => i.weight).filter(v => v != null);
+    const recentActual14 = timeSeries.filter(i => i.actualRecord).slice(-14).map(i => i.weight).filter(v => v != null);
+    const last7Weights = validWeights.slice(-7);
+    const last14Weights = validWeights.slice(-14);
+    const avg7 = last7Weights.length > 0 ? last7Weights.reduce((a, b) => a + b, 0) / last7Weights.length : null;
+    const avg14 = last14Weights.length > 0 ? last14Weights.reduce((a, b) => a + b, 0) / last14Weights.length : null;
+    const avg7Change = last7Weights.length > 1 ? Number((last7Weights[last7Weights.length - 1] - last7Weights[0]).toFixed(1)) : 0;
+    const avg14Change = last14Weights.length > 1 ? Number((last14Weights[last14Weights.length - 1] - last14Weights[0]).toFixed(1)) : 0;
+    const dailyJump = validWeights.length > 1 ? Number((validWeights[validWeights.length - 1] - validWeights[validWeights.length - 2]).toFixed(1)) : 0;
+    const weeklyRate = last7Weights.length > 1 ? Number(((last7Weights[last7Weights.length - 1] - last7Weights[0]) / Math.max(last7Weights.length - 1, 1) * 7).toFixed(2)) : 0;
+    const speedPct = state.goal.targetWeightKg ? Math.abs(weeklyRate / state.goal.targetWeightKg) * 100 : null;
+    const plateau = validWeights.length >= 14 && Math.abs(avg7Change) <= 0.3 && Math.abs(avg14Change) <= 0.5 && disciplineScore >= 50;
+    const fastLoss = weeklyRate < 0 && (
+      (state.goal.targetWeightKg && speedPct != null && speedPct > 1.2) ||
+      (latest > 0 && Math.abs(weeklyRate) > Math.max(0.8, latest * 0.012))
+    );
+    const abnormalJump = Math.abs(dailyJump) >= 1.5;
 
     const metaTags = [
       `纪律 ${disciplineScore}%`,
@@ -1563,6 +1775,13 @@
       `斜率 ${slope}`,
       `均线差 ${emaDiff > 0 ? '+' : ''}${emaDiff.toFixed(2)}kg`
     ];
+
+    const reasonTags = [];
+    if (latestRecord?.factors?.length) reasonTags.push(...normalizeFactors(latestRecord.factors).map(key => factorLabels[key]));
+    if (latestRecord?.workoutMinutes != null && latestRecord.workoutMinutes >= 60) reasonTags.push('长时训练');
+    if (latestRecord?.calorieDelta != null && latestRecord.calorieDelta < -500) reasonTags.push('高热量缺口');
+    if (latestRecord?.sleepHours != null && latestRecord.sleepHours < 6) reasonTags.push('睡眠不足');
+    if (latestRecord?.calorieDelta != null && latestRecord.calorieDelta > 0) reasonTags.push('热量盈余');
 
     let result = {
       title: '趋势稳定',
@@ -1572,6 +1791,16 @@
       bg: 'rgba(59,130,246,0.08)'
     };
 
+    if (plateau) {
+      result = {
+        title: '平台期信号',
+        desc: '最近两周均值变化很小，配合当前纪律分，比较像真实平台期而不是单日噪声。建议先观察 3-5 天，再决定是否调整热量缺口或活动量。',
+        icon: 'ph-pause',
+        color: 'var(--warning)',
+        bg: 'rgba(245,158,11,0.08)'
+      };
+    }
+
     if (validWeights.length < 21) {
       result = {
         title: '正在建立慢线模型',
@@ -1579,6 +1808,22 @@
         icon: 'ph-info',
         color: 'var(--text-muted)',
         bg: 'rgba(148,163,184,0.08)'
+      };
+    } else if (fastLoss) {
+      result = {
+        title: '下降过快提醒',
+        desc: '最近一周下降速度偏快，已经接近或超过常见减脂安全区间。建议优先检查是否存在过度热量缺口、恢复不足或水分波动。',
+        icon: 'ph-warning',
+        color: 'var(--danger)',
+        bg: 'rgba(239,68,68,0.08)'
+      };
+    } else if (abnormalJump) {
+      result = {
+        title: '异常波动提醒',
+        desc: '出现了比较大的单日跳变，优先把它当作水分、盐分、训练恢复或睡眠影响，而不是立刻调整长期策略。',
+        icon: 'ph-wave-sine',
+        color: 'var(--warning)',
+        bg: 'rgba(245,158,11,0.08)'
       };
     } else if (emaDiff < -0.2 && slope < 0) {
       // 快线在慢线下方，且快线向下走
@@ -1611,6 +1856,7 @@
     return {
       ...result,
       meta: metaTags,
+      reasonTags,
       disciplineScore,
       slope,
       volatility,
@@ -1639,11 +1885,108 @@
       `<i class="ph-fill ${result.icon} text-xl" style="color:${result.color}"></i>`;
 
     ui.ruleMeta.innerHTML =
-      result.meta
-        .map(
-          item => `<span class="chip">${item}</span>`
-        )
+      [
+        ...(result.meta || []),
+        ...(result.reasonTags || []).slice(0, 4)
+      ]
+        .map(item => `<span class="chip">${item}</span>`)
         .join('');
+  }
+
+  function computeWeeklyReport(records, timeSeries) {
+    const recent = records.slice(-7);
+    const prior = records.slice(-14, -7);
+    const lastWeight = recent.length > 0 ? recent[recent.length - 1].weight : null;
+    const prevWeight = prior.length > 0 ? prior[0].weight : null;
+    const weightChange = lastWeight != null && prevWeight != null ? Number((lastWeight - prevWeight).toFixed(1)) : null;
+    const waistRecent = recent.filter(r => r.waist != null);
+    const waistPrior = prior.filter(r => r.waist != null);
+    const waistChange = waistRecent.length > 0 && waistPrior.length > 0
+      ? Number((waistRecent[waistRecent.length - 1].waist - waistPrior[0].waist).toFixed(1))
+      : null;
+    const workoutMinutes = recent.reduce((sum, r) => sum + (Number(r.workoutMinutes) || 0), 0);
+    const sleepValues = recent.map(r => Number(r.sleepHours)).filter(v => Number.isFinite(v));
+    const avgSleep = sleepValues.length > 0 ? Number((sleepValues.reduce((a, b) => a + b, 0) / sleepValues.length).toFixed(1)) : null;
+    const disciplineAvg = recent.length > 0
+      ? Math.round(recent.reduce((sum, r) => sum + (r.workout ? 50 : 0) + (r.diet ? 50 : 0), 0) / recent.length)
+      : 0;
+    const factorCount = recent.reduce((sum, r) => sum + normalizeFactors(r.factors).length, 0);
+    const activeLabels = new Map();
+    recent.forEach(r => normalizeFactors(r.factors).forEach(key => activeLabels.set(key, (activeLabels.get(key) || 0) + 1)));
+    const topFactors = [...activeLabels.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([key]) => factorLabels[key]);
+    const period = recent.length > 0 ? `${recent[0].date} - ${recent[recent.length - 1].date}` : '--';
+
+    let summary = '最近 7 天的数据量还不够，继续记录后周报会更稳。';
+    if (recent.length >= 4) {
+      const parts = [];
+      if (weightChange != null) parts.push(`体重${weightChange > 0 ? '上升' : '下降'} ${getDisplayWeight(Math.abs(weightChange)).toFixed(1)} ${getUnitLabel()}`);
+      if (waistChange != null) parts.push(`腰围${waistChange > 0 ? '上升' : '下降'} ${Math.abs(waistChange).toFixed(1)} cm`);
+      parts.push(`纪律均值 ${disciplineAvg}%`);
+      if (topFactors.length > 0) parts.push(`高频标签：${topFactors.join('、')}`);
+      summary = parts.join(' · ');
+    }
+
+    return {
+      period,
+      weightChange,
+      waistChange,
+      workoutMinutes,
+      avgSleep,
+      disciplineAvg,
+      topFactors,
+      factorCount,
+      summary,
+      recent
+    };
+  }
+
+  function renderWeeklyReport(report) {
+    ui.weeklyReportPeriod.textContent = report.period;
+    ui.weeklyWeightChange.textContent = report.weightChange == null
+      ? `--.- ${getUnitLabel()}`
+      : `${report.weightChange > 0 ? '+' : ''}${getDisplayWeight(report.weightChange).toFixed(1)} ${getUnitLabel()}`;
+    ui.weeklyWaistChange.textContent = report.waistChange == null ? '--.- cm' : `${report.waistChange > 0 ? '+' : ''}${report.waistChange.toFixed(1)} cm`;
+    ui.weeklyWorkoutMinutes.textContent = `${report.workoutMinutes} 分钟`;
+    ui.weeklySleepAverage.textContent = report.avgSleep == null ? '-- 小时' : `${report.avgSleep} 小时`;
+    ui.weeklySummary.textContent = report.summary;
+  }
+
+  function renderRiskList(result, report, records) {
+    const risks = [];
+    const latestRecord = records[records.length - 1];
+    if (result.title === '平台期信号') risks.push({ title: '平台期', desc: '两周均值变化很小，建议先稳住 3-5 天再改策略。' });
+    if (result.title === '下降过快提醒') risks.push({ title: '下降过快', desc: '减重速度偏高，建议检查热量缺口、睡眠和恢复。' });
+    if (result.title === '异常波动提醒') risks.push({ title: '单日波动', desc: '更像水分/盐分/训练恢复影响，暂不建议改长期计划。' });
+    if (report.avgSleep != null && report.avgSleep < 6.5) risks.push({ title: '睡眠偏少', desc: `近 7 天平均睡眠 ${report.avgSleep} 小时，容易放大体重波动。` });
+    if (report.disciplineAvg < 50) risks.push({ title: '纪律偏弱', desc: `近 7 天纪律均值 ${report.disciplineAvg}%，执行稳定性还不够。` });
+    if (latestRecord?.factors?.length) risks.push({ title: '最近标签', desc: `最近一次记录标记了：${formatFactorLabels(latestRecord.factors)}。` });
+    if (riskScoreFromRecords(records) > 0) {
+      const abnormal = riskScoreFromRecords(records);
+      if (abnormal >= 2) risks.push({ title: '需要观察', desc: '最近几天存在多个扰动因素，先观察几天再判断趋势。' });
+    }
+
+    ui.riskCount.textContent = `${risks.length} 项`;
+    if (risks.length === 0) {
+      ui.riskList.innerHTML = '<div class="text-muted text-xs" style="color: var(--text-muted);">当前没有明显风险信号。</div>';
+      return;
+    }
+
+    ui.riskList.innerHTML = risks.map(item => `
+      <div class="p-3 rounded-xl border" style="border-color: var(--border-color); background: rgba(255,255,255,0.02);">
+        <div class="font-semibold text-sm mb-1">${escapeHtml(item.title)}</div>
+        <div style="color: var(--text-muted);">${escapeHtml(item.desc)}</div>
+      </div>
+    `).join('');
+  }
+
+  function riskScoreFromRecords(records) {
+    return records.slice(-7).reduce((score, record) => {
+      if (record.sleepHours != null && record.sleepHours < 6.5) score += 1;
+      if (record.workoutMinutes != null && record.workoutMinutes >= 75) score += 1;
+      if (record.calorieDelta != null && Math.abs(record.calorieDelta) > 500) score += 1;
+      if (normalizeFactors(record.factors).length >= 3) score += 1;
+      return score;
+    }, 0);
   }
 
   function updateTrendStats(timeSeries, ma7Data, analysis) {
@@ -1779,6 +2122,18 @@
     });
   }
 
+  function toggleFactor(key) {
+    const factors = new Set(normalizeFactors(state.draft.factors));
+    if (factors.has(key)) {
+      factors.delete(key);
+    } else {
+      factors.add(key);
+    }
+    state.draft.factors = [...factors];
+    syncDisciplineUI();
+    if (navigator.vibrate) navigator.vibrate(8);
+  }
+
   function renderWaistChart(records) {
     const waistRecords = getWaistRecords(records).sort((a, b) => new Date(a.date) - new Date(b.date));
     const ctx = ui.waistChart.getContext('2d');
@@ -1912,9 +2267,10 @@
       state.currentTimeSeries = timeSeries;
       state.currentMa7Data = ma7Data;
 
-      const rawAnalysis = analyzeSeries(timeSeries, ma7Data, ma21Data);
+      const rawAnalysis = analyzeSeries(timeSeries, ma7Data, ma21Data, records);
       const latestActualRecord = [...timeSeries].reverse().find(item => item.actualRecord);
       const analysis = addGoalContextToAnalysis(rawAnalysis, latestActualRecord?.weight ?? null);
+      const weeklyReport = computeWeeklyReport(allRecords, timeSeries);
 
       const displayRawWeights = rawWeights.map(w => getDisplayWeight(w));
       const displayActualWeights = actualWeights.map(w => getDisplayWeight(w));
@@ -1938,6 +2294,8 @@
       renderGoalUI(analysis, latestActualRecord?.weight ?? null);
       updateAdherenceStats(allRecords);
       renderWaistChart(records);
+      renderWeeklyReport(weeklyReport);
+      renderRiskList(analysis, weeklyReport, allRecords);
       setDiagnosticUI(analysis);
       await refreshHistoryList();
 
@@ -2120,7 +2478,13 @@
 
   ui.heightInput.addEventListener('input', renderDynamicBMI);
   ui.waistInput.addEventListener('input', updateDraftFromInputs);
+  ui.workoutMinutesInput.addEventListener('input', updateDraftFromInputs);
+  ui.calorieDeltaInput.addEventListener('input', updateDraftFromInputs);
+  ui.sleepHoursInput.addEventListener('input', updateDraftFromInputs);
   ui.noteInput.addEventListener('input', updateDraftFromInputs);
+  ui.factorButtons.forEach(btn => {
+    btn.addEventListener('click', e => toggleFactor(e.currentTarget.dataset.factor));
+  });
 
   async function initApp() {
 
