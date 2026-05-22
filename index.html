@@ -144,6 +144,36 @@
       background: rgba(255,255,255,.03);
     }
 
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      background: rgba(255,255,255,.03);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
+    }
+    .icon-btn:active { transform: scale(0.98); }
+    .icon-btn.danger {
+      background: rgba(251,113,133,.08);
+      color: var(--danger);
+    }
+
+    .history-row {
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      background: rgba(255,255,255,.02);
+    }
+
+    .history-note {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .toast {
       position: fixed;
       left: 50%;
@@ -172,7 +202,6 @@
     <header class="mb-6 flex justify-between items-center">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">今日打卡</h1>
-        <p id="current-date-display" class="text-sm mt-1" style="color: var(--text-muted);"></p>
       </div>
       <div class="flex gap-2">
         <button id="btn-unit-toggle" title="切换单位" class="p-2 w-11 h-11 rounded-full flex items-center justify-center border transition-colors font-bold text-sm" style="border-color: var(--border-color); background-color: rgba(52,211,153,.10); color: var(--accent);">
@@ -184,8 +213,18 @@
       </div>
     </header>
 
+    <section class="card p-4 mb-5">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-muted);">记录日期</p>
+          <p id="current-date-display" class="text-sm mt-1"></p>
+        </div>
+        <input id="record-date-input" type="date" class="bg-transparent border rounded-xl px-3 py-2 text-sm" style="border-color: var(--border-color); color: var(--text-main);" />
+      </div>
+    </section>
+
     <section class="card p-6 mb-5 flex flex-col items-center">
-      <h2 class="text-sm font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">体重 (KG)</h2>
+      <h2 id="weight-title" class="text-sm font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">体重 (KG)</h2>
 
       <div class="flex items-center justify-center w-full mb-5">
         <button id="btn-minus" class="w-14 h-14 shrink-0 rounded-full flex items-center justify-center text-3xl font-light border active:scale-95 transition-transform" style="background-color: rgba(255,255,255,.03); border-color: var(--border-color); color: var(--text-main);">-</button>
@@ -281,7 +320,7 @@
 
     <button id="btn-save" class="w-full py-4 rounded-2xl font-bold text-lg text-white shadow-lg active:scale-[0.98] transition-transform flex justify-center items-center gap-2" style="background-color: var(--primary); box-shadow: 0 18px 30px rgba(59, 130, 246, .25);">
       <i class="ph ph-check-circle text-xl"></i>
-      保存今日记录
+      保存记录
     </button>
 
     <div id="save-status" class="text-center text-sm mt-3 opacity-0 transition-opacity font-medium" style="color: var(--accent);">已成功保存！</div>
@@ -360,22 +399,31 @@
       </div>
     </section>
 
-    <section class="card p-5 border-l-4" id="rule-alert" style="border-left-color: var(--primary);">
+    <section class="card p-5 mb-5 border-l-4" id="rule-alert" style="border-left-color: var(--primary);">
       <div class="flex items-start gap-3">
         <div id="rule-icon" class="mt-0.5">
           <i class="ph-fill ph-info text-xl" style="color: var(--text-muted);"></i>
         </div>
         <div class="flex-1">
-          <div class="flex justify-between items-start gap-3 mb-1">
-            <h3 id="rule-title" class="font-bold text-sm">系统诊断中...</h3>
-            <button id="btn-ai-analyze" title="获取 AI 深度点评" class="text-xs px-2 py-1 rounded-xl flex items-center gap-1 bg-blue-50 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/30 transition-colors">
-              <i class="ph-fill ph-sparkle"></i> AI 点评
-            </button>
-          </div>
+          <h3 id="rule-title" class="font-bold text-sm mb-1">系统诊断中...</h3>
           <p id="rule-desc" class="text-xs leading-relaxed" style="color: var(--text-muted);">正在分析近期数据以提供建议。</p>
           <div id="rule-meta" class="mt-3 flex flex-wrap gap-2 text-[11px]"></div>
         </div>
       </div>
+    </section>
+
+    <section class="card p-5 mb-5">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <div>
+          <h2 class="text-sm font-semibold uppercase tracking-wider" style="color: var(--text-muted);">历史记录</h2>
+          <p id="history-count" class="text-xs mt-1" style="color: var(--text-muted);">共 0 条</p>
+        </div>
+        <button id="btn-backfill" class="h-9 px-3 rounded-xl border flex items-center gap-1 text-xs font-medium" style="border-color: var(--border-color); color: var(--text-main); background: rgba(255,255,255,.03);" title="新增补录">
+          <i class="ph ph-plus text-lg"></i>
+          <span>补录</span>
+        </button>
+      </div>
+      <div id="history-list" class="space-y-3"></div>
     </section>
   </main>
 
@@ -419,6 +467,7 @@
     trendsView: document.getElementById('view-trends'),
     navInput: document.getElementById('nav-input'),
     navTrends: document.getElementById('nav-trends'),
+    weightTitle: document.getElementById('weight-title'),
     weightInput: document.getElementById('weight-input'),
     btnMinus: document.getElementById('btn-minus'),
     btnPlus: document.getElementById('btn-plus'),
@@ -426,11 +475,12 @@
     btnSave: document.getElementById('btn-save'),
     saveStatus: document.getElementById('save-status'),
     dateDisplay: document.getElementById('current-date-display'),
+    recordDateInput: document.getElementById('record-date-input'),
     trendIndicator: document.getElementById('weight-trend-indicator'),
     chartRange: document.getElementById('chart-range'),
     btnExport: document.getElementById('btn-export'),
     btnUnitToggle: document.getElementById('btn-unit-toggle'),
-    btnAI: document.getElementById('btn-ai-analyze'),
+    btnBackfill: document.getElementById('btn-backfill'),
     btnWorkout: document.getElementById('btn-workout'),
     btnDiet: document.getElementById('btn-diet'),
     disciplineScore: document.getElementById('discipline-score'),
@@ -452,6 +502,8 @@
     ruleDesc: document.getElementById('rule-desc'),
     ruleIcon: document.getElementById('rule-icon'),
     ruleMeta: document.getElementById('rule-meta'),
+    historyCount: document.getElementById('history-count'),
+    historyList: document.getElementById('history-list'),
     toast: document.getElementById('toast'),
     toastIcon: document.getElementById('toast-icon'),
     toastMessage: document.getElementById('toast-message')
@@ -481,7 +533,7 @@
     ui.btnUnitToggle.textContent = state.unit === 'kg' ? 'KG' : '斤';
 
     // 修改输入区域的标题
-    document.querySelector('h2.text-sm.font-semibold.uppercase').textContent = `体重 (${state.unit.toUpperCase()})`;
+    ui.weightTitle.textContent = `体重 (${getUnitLabel()})`;
 
     // 根据当前所在视图刷新数据
     if (!ui.inputView.classList.contains('view-hidden')) {
@@ -507,7 +559,7 @@
 
     if (dateStr === yStr) return `昨天 · ${dateStr}`;
 
-    return dateStr;
+    return `补录 · ${dateStr}`;
   }
 
   function showToast(message, type = 'info') {
@@ -533,6 +585,142 @@
       ui.toast.style.top = '-100px';
       ui.toast.style.opacity = '0';
     }, 2600);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  async function exportAllRecords() {
+    try {
+      const records = await db.records.orderBy('date').toArray();
+
+      if (records.length === 0) {
+        showToast('暂无可导出的记录', 'warning');
+        return;
+      }
+
+      const payload = {
+        app: 'weight-tracking',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        unit: state.unit,
+        count: records.length,
+        records
+      };
+
+      const blob = new Blob(
+        [JSON.stringify(payload, null, 2)],
+        { type: 'application/json;charset=utf-8' }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `weight-tracking-export-${state.todayDateStr}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`已导出 ${records.length} 条记录`, 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('导出失败', 'warning');
+    }
+  }
+
+  function renderHistoryList(records) {
+    ui.historyCount.textContent = `共 ${records.length} 条`;
+
+    if (records.length === 0) {
+      ui.historyList.innerHTML = `
+        <div class="text-center py-6" style="color: var(--text-muted);">
+          <i class="ph ph-calendar-plus text-2xl"></i>
+          <p class="text-sm mt-2">还没有历史记录</p>
+          <p class="text-xs mt-1">选择日期后保存即可补录。</p>
+        </div>
+      `;
+      return;
+    }
+
+    ui.historyList.innerHTML = records.map(record => {
+      const weightText = `${getDisplayWeight(record.weight)?.toFixed(1) || '--.-'} ${getUnitLabel()}`;
+      const waistText = record.waist ? `腰围 ${Number(record.waist).toFixed(1)} cm` : '腰围未记录';
+      const disciplineText = [
+        record.workout ? '训练已执行' : '训练未执行',
+        record.diet ? '饮食已执行' : '饮食未执行'
+      ].join(' · ');
+      const noteText = record.note ? escapeHtml(record.note) : '未填写复盘';
+
+      return `
+        <div class="history-row p-3">
+          <div class="flex items-start justify-between gap-3">
+            <button type="button" class="flex-1 text-left min-w-0" data-history-edit="${escapeHtml(record.date)}">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-sm">${escapeHtml(record.date)}</span>
+                ${record.date === state.todayDateStr ? '<span class="chip">今天</span>' : ''}
+              </div>
+              <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span class="font-bold text-base" style="color: var(--text-main);">${weightText}</span>
+                <span class="chip">${waistText}</span>
+                <span class="chip">${disciplineText}</span>
+              </div>
+              <p class="history-note text-xs mt-2" style="color: var(--text-muted);" title="${noteText}">${noteText}</p>
+            </button>
+            <div class="flex gap-2 shrink-0">
+              <button type="button" class="icon-btn" title="编辑记录" data-history-edit="${escapeHtml(record.date)}">
+                <i class="ph ph-pencil-simple text-lg"></i>
+              </button>
+              <button type="button" class="icon-btn danger" title="删除记录" data-history-delete="${escapeHtml(record.date)}">
+                <i class="ph ph-trash text-lg"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function refreshHistoryList() {
+    try {
+      const records = await db.records.orderBy('date').reverse().toArray();
+      renderHistoryList(records);
+    } catch (error) {
+      console.error(error);
+      showToast('加载历史记录失败', 'warning');
+    }
+  }
+
+  function openRecordForEditing(dateStr) {
+    state.currentRecordDate = dateStr;
+    switchView('input');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function deleteRecord(dateStr) {
+    if (!confirm(`确定删除 ${dateStr} 的记录吗？此操作无法撤销。`)) return;
+
+    try {
+      await db.records.delete(dateStr);
+      showToast('记录已删除', 'success');
+
+      if (!ui.inputView.classList.contains('view-hidden')) {
+        await loadInputViewData();
+      }
+
+      if (!ui.trendsView.classList.contains('view-hidden')) {
+        await loadTrendsViewData();
+      }
+    } catch (error) {
+      console.error(error);
+      showToast('删除失败', 'warning');
+    }
   }
 
   function renderDynamicBMI() {
@@ -635,6 +823,8 @@
 
   async function loadInputViewData() {
     ui.dateDisplay.textContent = formatDateLabel(state.currentRecordDate);
+    ui.recordDateInput.value = state.currentRecordDate;
+    ui.recordDateInput.max = state.todayDateStr;
 
     if (state.height) {
       ui.heightInput.value = state.height;
@@ -654,7 +844,7 @@
         ui.waistInput.value = state.draft.waist !== null ? state.draft.waist : '';
         ui.noteInput.value = state.draft.note;
 
-        ui.btnSave.innerHTML = '<i class="ph ph-arrows-clockwise text-xl"></i> 更新今日记录';
+        ui.btnSave.innerHTML = '<i class="ph ph-arrows-clockwise text-xl"></i> 更新记录';
         state.lastSavedRecordDate = record.date;
       } else {
         const lastRecord = await db.records.orderBy('date').reverse().first();
@@ -669,7 +859,7 @@
         ui.waistInput.value = state.draft.waist !== null ? state.draft.waist : '';
         ui.noteInput.value = '';
 
-        ui.btnSave.innerHTML = '<i class="ph ph-check-circle text-xl"></i> 保存今日记录';
+        ui.btnSave.innerHTML = '<i class="ph ph-check-circle text-xl"></i> 保存记录';
       }
 
       syncDisciplineUI();
@@ -682,7 +872,7 @@
     }
   }
 
-async function updateTrendIndicator() {
+  async function updateTrendIndicator() {
     try {
       const currentVal = parseFloat(ui.weightInput.value);
 
@@ -691,10 +881,10 @@ async function updateTrendIndicator() {
         return;
       }
 
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
+      const currentDate = new Date(state.currentRecordDate);
+      currentDate.setDate(currentDate.getDate() - 1);
 
-      const yesterdayStr = getLocalISODate(yesterday);
+      const yesterdayStr = getLocalISODate(currentDate);
 
       const yesterdayRecord =
         await db.records.get(yesterdayStr);
@@ -761,6 +951,8 @@ async function updateTrendIndicator() {
 
     try {
       await db.records.put(record);
+      state.lastSavedRecordDate = record.date;
+      ui.btnSave.innerHTML = '<i class="ph ph-arrows-clockwise text-xl"></i> 更新记录';
 
       ui.saveStatus.style.opacity = '1';
 
@@ -1239,6 +1431,7 @@ async function updateTrendIndicator() {
       );
 
       setDiagnosticUI(analysis);
+      await refreshHistoryList();
 
     } catch (error) {
       console.error(error);
@@ -1308,6 +1501,20 @@ async function updateTrendIndicator() {
     () => switchView('trends')
   );
 
+  ui.btnExport.addEventListener(
+    'click',
+    exportAllRecords
+  );
+
+  ui.btnBackfill.addEventListener(
+    'click',
+    () => {
+      state.currentRecordDate = state.todayDateStr;
+      switchView('input');
+      setTimeout(() => ui.recordDateInput.focus(), 0);
+    }
+  );
+
   ui.btnMinus.addEventListener(
     'click',
     () => adjustWeight(-0.1)
@@ -1356,6 +1563,25 @@ async function updateTrendIndicator() {
     loadTrendsViewData
   );
 
+  ui.recordDateInput.addEventListener('change', e => {
+    state.currentRecordDate = e.target.value || state.todayDateStr;
+    loadInputViewData();
+  });
+
+  ui.historyList.addEventListener('click', e => {
+    const editTarget = e.target.closest('[data-history-edit]');
+    const deleteTarget = e.target.closest('[data-history-delete]');
+
+    if (deleteTarget) {
+      deleteRecord(deleteTarget.dataset.historyDelete);
+      return;
+    }
+
+    if (editTarget) {
+      openRecordForEditing(editTarget.dataset.historyEdit);
+    }
+  });
+
   ui.heightInput.addEventListener('input', renderDynamicBMI);
   ui.waistInput.addEventListener('input', updateDraftFromInputs);
   ui.noteInput.addEventListener('input', updateDraftFromInputs);
@@ -1369,7 +1595,9 @@ async function updateTrendIndicator() {
       state.todayDateStr;
 
     ui.btnUnitToggle.textContent = state.unit === 'kg' ? 'KG' : '斤';
-    document.querySelector('h2.text-sm.font-semibold.uppercase').textContent = `体重 (${state.unit.toUpperCase()})`;
+    ui.weightTitle.textContent = `体重 (${getUnitLabel()})`;
+    ui.recordDateInput.max = state.todayDateStr;
+    ui.recordDateInput.value = state.currentRecordDate;
 
     switchView('input');
 
